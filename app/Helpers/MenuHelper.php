@@ -2,99 +2,73 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\Auth;
+
 class MenuHelper
 {
-    public static function getMainNavItems()
+    /**
+     * Return menu groups filtered by current user's role.
+     */
+    public static function getMenuGroups(): array
     {
+        $role = Auth::user()?->role ?? '';
+
         return [
             [
-                'icon' => 'dashboard',
-                'name' => 'Dashboard',
-                'subItems' => [
-                    ['name' => 'Ecommerce', 'path' => '/'],
-                ],
-            ],
-            [
-                'icon' => 'calendar',
-                'name' => 'Calendar',
-                'path' => '/calendar',
-            ],
-            [
-                'icon' => 'user-profile',
-                'name' => 'User Profile',
-                'path' => '/profile',
-            ],
-            [
-                'name' => 'Forms',
-                'icon' => 'forms',
-                'subItems' => [
-                    ['name' => 'Form Elements', 'path' => '/form-elements', 'pro' => false],
-                ],
-            ],
-            [
-                'name' => 'Tables',
-                'icon' => 'tables',
-                'subItems' => [
-                    ['name' => 'Basic Tables', 'path' => '/basic-tables', 'pro' => false]
-                ],
-            ],
-            [
-                'name' => 'Pages',
-                'icon' => 'pages',
-                'subItems' => [
-                    ['name' => 'Blank Page', 'path' => '/blank', 'pro' => false],
-                    ['name' => '404 Error', 'path' => '/error-404', 'pro' => false]
-                ],
+                'title' => 'Menu Utama',
+                'items' => self::getMainNavItems($role),
             ],
         ];
     }
 
-    public static function getOthersItems()
+    /**
+     * Menu items per role.
+     */
+    private static function getMainNavItems(string $role): array
     {
-        return [
-            [
-                'icon' => 'charts',
-                'name' => 'Charts',
-                'subItems' => [
-                    ['name' => 'Line Chart', 'path' => '/line-chart', 'pro' => false],
-                    ['name' => 'Bar Chart', 'path' => '/bar-chart', 'pro' => false]
-                ],
-            ],
-            [
-                'icon' => 'ui-elements',
-                'name' => 'UI Elements',
-                'subItems' => [
-                    ['name' => 'Alerts', 'path' => '/alerts', 'pro' => false],
-                    ['name' => 'Avatar', 'path' => '/avatars', 'pro' => false],
-                    ['name' => 'Badge', 'path' => '/badge', 'pro' => false],
-                    ['name' => 'Buttons', 'path' => '/buttons', 'pro' => false],
-                    ['name' => 'Images', 'path' => '/image', 'pro' => false],
-                    ['name' => 'Videos', 'path' => '/videos', 'pro' => false],
-                ],
-            ],
-            [
-                'icon' => 'authentication',
-                'name' => 'Authentication',
-                'subItems' => [
-                    ['name' => 'Sign In', 'path' => '/signin', 'pro' => false],
-                    ['name' => 'Sign Up', 'path' => '/signup', 'pro' => false],
-                ],
-            ],
+        $dashboard = [
+            'icon'  => 'dashboard',
+            'name'  => 'Dashboard',
+            'path'  => '/dashboard',
         ];
-    }
+        
+        $inventory = [
+            'icon'  => 'tables',
+            'name'  => 'Data Inventory',
+            'path'  => '/inventory',
+        ];
 
-    public static function getMenuGroups()
-    {
-        return [
-            [
-                'title' => 'Menu',
-                'items' => self::getMainNavItems()
+        $roleMenus = match ($role) {
+            'Super Admin' => [
+                $dashboard,
+                $inventory,
+                [
+                    'icon' => 'forms',
+                    'name' => 'Audit & Activity Logs',
+                    'path' => '/logs',
+                ],
+                [
+                    'icon' => 'user-profile',
+                    'name' => 'Master Data',
+                    'subItems' => [
+                        ['name' => 'Manajemen User', 'path' => '/master/users', 'pro' => false],
+                        ['name' => 'Master Departemen', 'path' => '/master/departments', 'pro' => false],
+                    ],
+                ],
             ],
-            [
-                'title' => 'Others',
-                'items' => self::getOthersItems()
-            ]
-        ];
+
+            'IT SAS Supervisor' => [
+                $dashboard,
+                $inventory,
+            ],
+
+            default => [
+                $dashboard,
+                $inventory,
+            ],
+        };
+
+        return $roleMenus;
     }
 
     public static function isActive($path)

@@ -88,7 +88,7 @@
         </div>
 
         <!-- Notification List -->
-        <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+        <!-- <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
             @php
                 $notifications = [
                     [
@@ -207,7 +207,7 @@
                     </a>
                 </li>
             @endforeach
-        </ul>
+        </ul> -->
 
         <!-- View All Button -->
         <a

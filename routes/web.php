@@ -1,95 +1,88 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ChangePasswordController;
+// use App\Http\Controllers\DashboardController;
+// use App\Http\Controllers\InventoryController;
+// use App\Http\Controllers\ActivityLogController;
 
-// dashboard pages
+// ───────────────────────────────────────────────────
+// HOME (Public / Redirect)
+// ───────────────────────────────────────────────────
 Route::get('/', function () {
-    return view('pages.dashboard.ecommerce', ['title' => 'E-commerce Dashboard']);
-})->name('dashboard');
+    return redirect()->route('login');
+})->name('home');
 
-// calender pages
-Route::get('/calendar', function () {
-    return view('pages.calender', ['title' => 'Calendar']);
-})->name('calendar');
+// ───────────────────────────────────────────────────
+// AUTHENTICATION
+// ───────────────────────────────────────────────────
+Route::middleware('guest')->group(function () {
+    Route::get('/login', function () {
+        return view('auth.login', ['title' => 'Log In']);
+    })->name('login');
+    
+    Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
+});
 
-// profile pages
-Route::get('/profile', function () {
-    return view('pages.profile', ['title' => 'Profile']);
-})->name('profile');
-
-// form pages
-Route::get('/form-elements', function () {
-    return view('pages.form.form-elements', ['title' => 'Form Elements']);
-})->name('form-elements');
-
-// tables pages
-Route::get('/basic-tables', function () {
-    return view('pages.tables.basic-tables', ['title' => 'Basic Tables']);
-})->name('basic-tables');
-
-// pages
-
-Route::get('/blank', function () {
-    return view('pages.blank', ['title' => 'Blank']);
-})->name('blank');
-
-// error pages
-Route::get('/error-404', function () {
-    return view('pages.errors.error-404', ['title' => 'Error 404']);
-})->name('error-404');
-
-// chart pages
-Route::get('/line-chart', function () {
-    return view('pages.chart.line-chart', ['title' => 'Line Chart']);
-})->name('line-chart');
-
-Route::get('/bar-chart', function () {
-    return view('pages.chart.bar-chart', ['title' => 'Bar Chart']);
-})->name('bar-chart');
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
 
-// authentication pages
-Route::get('/signin', function () {
-    return view('pages.auth.signin', ['title' => 'Sign In']);
-})->name('signin');
-
-Route::get('/signup', function () {
-    return view('pages.auth.signup', ['title' => 'Sign Up']);
-})->name('signup');
-
-// ui elements pages
-Route::get('/alerts', function () {
-    return view('pages.ui-elements.alerts', ['title' => 'Alerts']);
-})->name('alerts');
-
-Route::get('/avatars', function () {
-    return view('pages.ui-elements.avatars', ['title' => 'Avatars']);
-})->name('avatars');
-
-Route::get('/badge', function () {
-    return view('pages.ui-elements.badges', ['title' => 'Badges']);
-})->name('badges');
-
-Route::get('/buttons', function () {
-    return view('pages.ui-elements.buttons', ['title' => 'Buttons']);
-})->name('buttons');
-
-Route::get('/image', function () {
-    return view('pages.ui-elements.images', ['title' => 'Images']);
-})->name('images');
-
-Route::get('/videos', function () {
-    return view('pages.ui-elements.videos', ['title' => 'Videos']);
-})->name('videos');
+// ───────────────────────────────────────────────────
+// GANTI PASSWORD (Harus login, tetapi belum tentu sudah isi password)
+// ───────────────────────────────────────────────────
+Route::middleware('auth')->group(function () {
+    Route::get('/change-password', function () {
+        return view('auth.change-password', ['title' => 'Change Password']);
+    })->name('change_password');
+    
+    Route::post('/change-password', [ChangePasswordController::class, 'update'])->name('auth.change-password.update');
+});
 
 
+// ───────────────────────────────────────────────────
+// PROTECTED ROUTES (Membutuhkan Login & Password sudah di-set)
+// ───────────────────────────────────────────────────
+Route::middleware(['auth', 'first_login'])->group(function () {
 
+    // ── Dashboard ──────────────────────────────────────
+    Route::get('/dashboard', function () {
+        return view('dashboard.itsas', ['title' => 'Dashboard']);
+    })->name('dashboard');
 
+    // ── Inventory Management (User, IP, Password) ──────
+    Route::middleware(['role:IT SAS Supervisor,Super Admin'])->prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', function () {
+            return view('inventory.inventory', ['title' => 'Data Inventory']);
+        })->name('index');
+    });
 
+    // ── Activity Logs & Master Data (Hanya Super Admin) ──
+    Route::middleware(['role:Super Admin'])->group(function () {
+        
+        // Logs
+        Route::prefix('logs')->name('logs.')->group(function () {
+            Route::get('/', function () {
+                return "Halaman Audit & Activity Logs";
+            })->name('index');
+        });
 
+        // Master Data Users & Departments
+        Route::prefix('master')->name('master.')->group(function () {
+            Route::get('/users', function () {
+                return "Halaman Manajemen User";
+            })->name('users');
+            
+            Route::get('/departments', function () {
+                return "Halaman Master Departemen";
+            })->name('departments');
+        });
 
+    });
 
+});
 
 
 

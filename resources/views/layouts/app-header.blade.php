@@ -65,12 +65,11 @@
                 </svg>
             </button>
 
-            <!-- Search Bar (desktop only) -->
+            <!-- Search Bar (desktop only)
             <div class="hidden xl:block">
                 <form>
                     <div class="relative">
                         <span class="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2">
-                            <!-- Search Icon -->
                             <svg class="fill-gray-500 dark:fill-gray-400" width="20" height="20"
                                 viewBox="0 0 20 20" fill="none">
                                 <path fill-rule="evenodd" clip-rule="evenodd"
@@ -88,7 +87,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </div> -->
 
         <!-- Application Menu (mobile) and Right Side Actions (desktop) -->
         <div :class="isApplicationMenuOpen ? 'flex' : 'hidden'"

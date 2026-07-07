@@ -13,11 +13,20 @@
         @click.prevent="toggleDropdown()"
         type="button"
     >
-        <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-            <img src="/images/user/owner.png" alt="User" />
+        @php
+            $name = auth()->user()?->name ?? 'User';
+            $initials = collect(explode(' ', $name))
+                ->map(fn($segment) => strtoupper(substr($segment, 0, 1)))
+                ->take(2)
+                ->join('');
+        @endphp
+        <span class="mr-3 flex items-center justify-center overflow-hidden rounded-full h-11 w-11 bg-brand-500 text-white font-semibold text-lg">
+            {{ $initials }}
         </span>
 
-       <span class="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span class="block mr-1 font-medium text-theme-sm">
+            {{ auth()->user()?->username_ad ?? 'Guest' }}
+        </span>
 
         <!-- Chevron Icon -->
         <svg
@@ -45,11 +54,15 @@
     >
         <!-- User Info -->
         <div>
-            <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">Musharof Chowdhury</span>
-            <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">randomuser@pimjo.com</span>
+            <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
+                {{ auth()->user()?->name ?? 'User' }} ({{ auth()->user()?->id_karyawan ?? '-' }})
+            </span>
+            <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
+                Role: {{ auth()->user()?->role ?? '-' }}
+            </span>
         </div>
 
-        <!-- Menu Items -->
+        <!-- Menu Items
         <ul class="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
             @php
                 $menuItems = [
@@ -105,7 +118,7 @@
                     </a>
                 </li>
             @endforeach
-        </ul>
+        </ul> -->
 
         <!-- Sign Out -->
         {{-- <form method="POST" action="#">

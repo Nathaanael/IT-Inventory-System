@@ -66,16 +66,16 @@
         <a href="/" class="flex flex-col justify-center">
             <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                 class="text-3xl font-bold tracking-widest text-brand-500 dark:text-brand-400 leading-none">
-                GEAR
+                VAULT
             </span>
             <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                 class="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">
-                General Equipment & Asset Repository
+                Virtual Asset & User Logging Tracker
             </span>
             
             <span x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
                 class="text-2xl font-bold text-brand-500 dark:text-brand-400 text-center w-full">
-                G
+                V
             </span>
         </a>
     </div>

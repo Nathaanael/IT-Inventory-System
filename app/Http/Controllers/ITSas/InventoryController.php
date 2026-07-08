@@ -10,6 +10,7 @@ use App\Models\Inventory;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class InventoryController extends Controller
 {
@@ -87,6 +88,11 @@ class InventoryController extends Controller
 
     public function edit(Inventory $inventory)
     {
+        // Check if vault is unlocked in session
+        if (!session('vault_unlocked') || session('vault_unlocked_expires_at') < now()) {
+            return redirect()->route('inventory.index')->with('error', 'Akses ditolak. Anda harus memasukkan Vault PIN terlebih dahulu.');
+        }
+
         $departments = Department::all();
         // Decrypt password for editing (only if needed or just pass an indicator)
         $inventory->password_remote = Crypt::decryptString($inventory->password_remote);
@@ -135,5 +141,51 @@ class InventoryController extends Controller
             'ip_address' => request()->ip()
         ]);
         return redirect()->route('inventory.index')->with('success', 'Data inventory berhasil dihapus.');
+    }
+
+    public function setPin(Request $request)
+    {
+        $request->validate([
+            'pin' => 'required|digits:6|confirmed'
+        ], [
+            'pin.digits' => 'PIN harus terdiri dari 6 angka.',
+            'pin.confirmed' => 'Konfirmasi PIN tidak cocok.'
+        ]);
+
+        $user = auth()->user();
+        $user->vault_pin = Hash::make($request->pin);
+        $user->save();
+
+        session(['vault_unlocked' => true, 'vault_unlocked_expires_at' => now()->addMinutes(15)]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function verifyPin(Request $request)
+    {
+        $request->validate(['pin' => 'required|digits:6']);
+        $user = auth()->user();
+
+        if (Hash::check($request->pin, $user->vault_pin)) {
+            session(['vault_unlocked' => true, 'vault_unlocked_expires_at' => now()->addMinutes(15)]);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'PIN yang Anda masukkan salah.'], 403);
+    }
+
+    public function revealPassword(Request $request, Inventory $inventory)
+    {
+        $request->validate(['pin' => 'required|digits:6']);
+        $user = auth()->user();
+
+        if (Hash::check($request->pin, $user->vault_pin)) {
+            return response()->json([
+                'success' => true,
+                'password' => Crypt::decryptString($inventory->password_remote)
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'PIN yang Anda masukkan salah.'], 403);
     }
 }

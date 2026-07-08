@@ -58,6 +58,11 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::get('/{inventory}/edit', [\App\Http\Controllers\ITSas\InventoryController::class, 'edit'])->name('edit');
         Route::put('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'update'])->name('update');
         Route::delete('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'destroy'])->name('destroy');
+        
+        // Vault Endpoints
+        Route::post('/vault/set-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'setPin'])->name('vault.set-pin');
+        Route::post('/vault/verify-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'verifyPin'])->name('vault.verify-pin');
+        Route::post('/{inventory}/reveal', [\App\Http\Controllers\ITSas\InventoryController::class, 'revealPassword'])->name('vault.reveal');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

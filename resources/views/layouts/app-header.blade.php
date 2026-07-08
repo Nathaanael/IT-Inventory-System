@@ -51,10 +51,10 @@
             <a href="/" class="flex flex-col xl:hidden">
                 <!-- Full Text Logo -->
                 <span class="text-2xl font-bold tracking-widest text-brand-500 dark:text-brand-400 leading-none">
-                    GEAR
+                    VAULT
                 </span>
                 <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">
-                    General Equipment & Asset Repository
+                    Virtual Asset & User Logging Tracker
                 </span>
             </a>
 
@@ -114,9 +114,6 @@
                             fill="currentColor" />
                     </svg>
                 </button>
-
-                <!-- Notification Dropdown -->
-                <x-header.notification-dropdown />
             </div>
 
             <!-- User Dropdown -->

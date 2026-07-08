@@ -9,6 +9,16 @@
     @endif
 
     <div x-data="inventoryManager()" class="grid grid-cols-1 gap-6 relative">
+        
+        <!-- Loading Overlay -->
+        <div x-show="isSearching" x-transition.opacity class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 z-50 flex flex-col items-center justify-center rounded-2xl backdrop-blur-sm" style="display: none;">
+            <svg class="animate-spin h-8 w-8 text-brand-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Memuat data...</span>
+        </div>
+
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
             
             <!-- Header & Action -->
@@ -65,7 +75,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($inventories as $index => $inventory)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="{ rowId: {{ $inventory->id }}, showPassword: false }" @password-verified.window="if($event.detail.id === rowId) showPassword = true">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="{ rowId: {{ $inventory->id }}, showPassword: false, revealedPassword: '' }" @password-verified.window="if($event.detail.id === rowId) { showPassword = true; revealedPassword = $event.detail.password; }">
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventories->firstItem() + $index }}</td>
                             <td class="px-5 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{{ $inventory->nama_user }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
@@ -74,7 +84,7 @@
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->ip_address }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-3">
-                                    <span class="font-mono tracking-widest text-lg mt-1 leading-none" x-text="showPassword ? '{{ \Illuminate\Support\Facades\Crypt::decryptString($inventory->password_remote) }}' : '********'"></span>
+                                    <span class="font-mono tracking-widest text-lg mt-1 leading-none" x-text="showPassword ? revealedPassword : '********'"></span>
                                     <button @click="if(showPassword) { showPassword = false } else { $dispatch('open-auth-modal', { id: rowId }) }" class="text-gray-400 hover:text-brand-500 focus:outline-none transition-colors" title="Lihat Password">
                                         <!-- Eye Icon -->
                                         <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -113,11 +123,55 @@
 
         </div>
 
+        <!-- Modal Setup PIN (Otomatis muncul jika belum set) -->
+        <template x-teleport="body">
+            <div 
+                x-show="showSetupModal" 
+                class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
+                x-transition.opacity 
+                style="display: none;"
+            >
+                <div 
+                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
+                >
+                    <div class="mb-5 flex items-center gap-3 text-brand-500">
+                        <div class="p-2 bg-brand-100 dark:bg-brand-500/20 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Setup Vault PIN</h3>
+                    </div>
+                    
+                    <p class="mb-5 text-sm text-gray-600 dark:text-gray-400">
+                        Untuk menjaga kerahasiaan *password remote*, Anda diwajibkan untuk mengatur <strong>6 Digit PIN Khusus</strong>. PIN ini akan digunakan setiap kali Anda melihat atau mengubah data.
+                    </p>
+                    
+                    <div class="mb-4 relative">
+                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Masukkan 6 Digit PIN</label>
+                        <input type="password" maxlength="6" inputmode="numeric" pattern="[0-9]*" x-model="setupPin" class="w-full text-center tracking-[1em] font-mono text-2xl rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90" placeholder="••••••" />
+                    </div>
+
+                    <div class="mb-6 relative">
+                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Konfirmasi PIN</label>
+                        <input type="password" maxlength="6" inputmode="numeric" pattern="[0-9]*" x-model="setupPinConfirm" class="w-full text-center tracking-[1em] font-mono text-2xl rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90" placeholder="••••••" />
+                    </div>
+
+                    <div x-show="setupError" class="mb-4 text-sm text-red-500 text-center" x-text="setupError"></div>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button @click="saveSetupPin()" class="w-full rounded-lg bg-brand-500 px-5 py-3 text-sm font-medium text-white hover:bg-brand-600 transition-colors shadow-theme-md" :disabled="isSavingPin" :class="{'opacity-50 cursor-not-allowed': isSavingPin}">
+                            <span x-show="!isSavingPin">Simpan PIN</span>
+                            <span x-show="isSavingPin">Menyimpan...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
         <!-- Modal Password Overlay -->
         <template x-teleport="body">
             <div 
                 x-show="showModal" 
-                @open-auth-modal.window="showModal = true; activeRowId = $event.detail.id; authAction = $event.detail.action || 'view'; passwordInput = ''"
+                @open-auth-modal.window="showModal = true; activeRowId = $event.detail.id; authAction = $event.detail.action || 'view'; passwordInput = ''; authError = ''"
                 class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
                 x-transition.opacity 
                 style="display: none;"
@@ -137,21 +191,26 @@
                         <div class="p-2 bg-red-100 dark:bg-red-500/20 rounded-full">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Otorisasi Keamanan</h3>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Otorisasi Vault</h3>
                     </div>
                     
                     <p class="mb-5 text-sm text-gray-600 dark:text-gray-400">
-                        Untuk alasan keamanan dan *audit trail*, silakan masukkan password akun Anda (<strong>{{ auth()->user()?->username_ad ?? 'User' }}</strong>) untuk <span x-text="authAction === 'edit' ? 'mengubah data ini' : 'melihat password remote ini'"></span>.
+                        Silakan masukkan <strong>6 Digit Vault PIN</strong> Anda untuk <span x-text="authAction === 'edit' ? 'mengubah data ini' : 'melihat password remote ini'"></span>.
                     </p>
                     
                     <div class="mb-6 relative">
-                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password Anda</label>
-                        <input type="password" x-model="passwordInput" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90" placeholder="Masukkan password..." @keyup.enter="verifyPassword()" x-ref="pwdInput" x-effect="if(showModal) setTimeout(() => $refs.pwdInput.focus(), 100)" />
+                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Vault PIN</label>
+                        <input type="password" maxlength="6" inputmode="numeric" pattern="[0-9]*" x-model="passwordInput" class="w-full text-center tracking-[1em] font-mono text-2xl rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90" placeholder="••••••" @keyup.enter="verifyPassword()" x-ref="pwdInput" x-effect="if(showModal) setTimeout(() => $refs.pwdInput.focus(), 100)" />
                     </div>
+
+                    <div x-show="authError" class="mb-4 text-sm text-red-500 text-center" x-text="authError"></div>
                     
                     <div class="flex justify-end gap-3">
-                        <button @click="showModal = false" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Batal</button>
-                        <button @click="verifyPassword()" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 transition-colors shadow-theme-md">Konfirmasi</button>
+                        <button @click="showModal = false" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors" :disabled="isVerifying">Batal</button>
+                        <button @click="verifyPassword()" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 transition-colors shadow-theme-md" :disabled="isVerifying">
+                            <span x-show="!isVerifying">Konfirmasi</span>
+                            <span x-show="isVerifying">Mengecek...</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -205,10 +264,19 @@
     <script>
         function inventoryManager() {
             return {
+                showSetupModal: {{ auth()->user()->vault_pin === null ? 'true' : 'false' }},
+                setupPin: '',
+                setupPinConfirm: '',
+                setupError: '',
+                isSavingPin: false,
+
                 showModal: false,
                 activeRowId: null,
                 passwordInput: '',
                 authAction: 'view',
+                authError: '',
+                isVerifying: false,
+
                 showDeleteModal: false,
                 deleteId: null,
                 deleteUrl: '',
@@ -249,20 +317,102 @@
                         this.isSearching = false;
                     }
                 },
-                
-                verifyPassword() {
-                    // MOCK UI: Anggap saja verifikasi berhasil jika input tidak kosong
-                    if(this.passwordInput.trim() !== '') {
-                        if (this.authAction === 'edit') {
-                            window.location.href = '{{ url('inventory') }}/' + this.activeRowId + '/edit';
+
+                async saveSetupPin() {
+                    this.setupError = '';
+                    if (this.setupPin.length !== 6 || this.setupPinConfirm.length !== 6) {
+                        this.setupError = 'PIN harus terdiri dari 6 digit angka.';
+                        return;
+                    }
+                    if (this.setupPin !== this.setupPinConfirm) {
+                        this.setupError = 'Konfirmasi PIN tidak cocok.';
+                        return;
+                    }
+
+                    this.isSavingPin = true;
+                    try {
+                        const response = await fetch('{{ route('inventory.vault.set-pin') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                pin: this.setupPin,
+                                pin_confirmation: this.setupPinConfirm
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            this.showSetupModal = false;
                         } else {
-                            // Memancarkan event bahwa password telah terverifikasi untuk baris ini
-                            this.$dispatch('password-verified', { id: this.activeRowId });
+                            this.setupError = result.message || result.errors?.pin?.[0] || 'Terjadi kesalahan saat menyimpan PIN.';
                         }
-                        this.showModal = false;
-                        this.passwordInput = '';
-                    } else {
-                        alert('Password tidak boleh kosong!');
+                    } catch (error) {
+                        this.setupError = 'Terjadi kesalahan koneksi jaringan.';
+                    } finally {
+                        this.isSavingPin = false;
+                    }
+                },
+                
+                async verifyPassword() {
+                    this.authError = '';
+                    if (this.passwordInput.length !== 6) {
+                        this.authError = 'PIN harus terdiri dari 6 digit angka.';
+                        return;
+                    }
+
+                    this.isVerifying = true;
+
+                    try {
+                        if (this.authAction === 'edit') {
+                            // Cukup verifikasi PIN untuk membuka sesi edit
+                            const response = await fetch('{{ route('inventory.vault.verify-pin') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ pin: this.passwordInput })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok && result.success) {
+                                window.location.href = '{{ url('inventory') }}/' + this.activeRowId + '/edit';
+                            } else {
+                                this.authError = result.message || 'PIN yang Anda masukkan salah.';
+                            }
+                        } else {
+                            // Tarik password asli jika mode view
+                            const response = await fetch('{{ url('inventory') }}/' + this.activeRowId + '/reveal', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ pin: this.passwordInput })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok && result.success) {
+                                this.$dispatch('password-verified', { id: this.activeRowId, password: result.password });
+                                this.showModal = false;
+                                this.passwordInput = '';
+                            } else {
+                                this.authError = result.message || 'PIN yang Anda masukkan salah.';
+                            }
+                        }
+                    } catch (error) {
+                        this.authError = 'Terjadi kesalahan jaringan.';
+                    } finally {
+                        this.isVerifying = false;
                     }
                 }
             }

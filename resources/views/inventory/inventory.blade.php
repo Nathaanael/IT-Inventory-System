@@ -75,13 +75,26 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($inventories as $index => $inventory)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="{ rowId: {{ $inventory->id }}, showPassword: false, revealedPassword: '' }" @password-verified.window="if($event.detail.id === rowId) { showPassword = true; revealedPassword = $event.detail.password; }">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="inventoryRow({{ $inventory->id }})" @password-verified.window="if($event.detail.id === rowId) { showPassword = true; revealedPassword = $event.detail.password; }">
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventories->firstItem() + $index }}</td>
                             <td class="px-5 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{{ $inventory->nama_user }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <span class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{{ $inventory->department->name ?? '-' }}</span>
                             </td>
-                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->ip_address }}</td>
+                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                                <div class="flex items-center gap-2">
+                                    <span class="relative flex h-3 w-3" :title="pingStatus === 'checking' ? 'Mengecek status...' : (pingStatus === 'online' ? 'Online' : 'Offline')">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75" x-show="pingStatus === 'checking'"></span>
+                                        <span class="relative inline-flex rounded-full h-3 w-3 transition-colors duration-300"
+                                            :class="{
+                                                'bg-gray-400': pingStatus === 'checking',
+                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': pingStatus === 'online',
+                                                'bg-red-500': pingStatus === 'offline'
+                                            }"></span>
+                                    </span>
+                                    <span>{{ $inventory->ip_address }}</span>
+                                </div>
+                            </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-3">
                                     <span class="font-mono tracking-widest text-lg mt-1 leading-none" x-text="showPassword ? revealedPassword : '********'"></span>
@@ -95,6 +108,9 @@
                             </td>
                             <td class="px-5 py-4 text-center">
                                 <div class="flex items-center justify-center gap-3">
+                                    <a href="{{ route('inventory.rdp', $inventory->id) }}" class="text-green-500 hover:text-green-700 transition-colors" title="Download RDP (One-Click Remote)" target="_blank">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    </a>
                                     <button @click="$dispatch('open-auth-modal', { id: rowId, action: 'edit' })" class="text-blue-500 hover:text-blue-700 transition-colors" title="Edit Data">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     </button>
@@ -262,6 +278,35 @@
 
     <!-- Alpine Logic -->
     <script>
+        function inventoryRow(id) {
+            return {
+                rowId: id,
+                showPassword: false,
+                revealedPassword: '',
+                pingStatus: 'checking',
+
+                init() {
+                    // Stagger delay between 0.5s and 2.5s to prevent overwhelming the server on bulk load
+                    const delay = 500 + Math.random() * 2000;
+                    setTimeout(() => {
+                        this.checkPing();
+                    }, delay);
+                },
+
+                async checkPing() {
+                    try {
+                        const response = await fetch('{{ url('inventory') }}/' + this.rowId + '/ping', {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const result = await response.json();
+                        this.pingStatus = result.status;
+                    } catch (error) {
+                        this.pingStatus = 'offline';
+                    }
+                }
+            }
+        }
+
         function inventoryManager() {
             return {
                 showSetupModal: {{ auth()->user()->vault_pin === null ? 'true' : 'false' }},

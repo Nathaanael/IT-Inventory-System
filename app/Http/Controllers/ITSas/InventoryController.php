@@ -188,4 +188,48 @@ class InventoryController extends Controller
 
         return response()->json(['success' => false, 'message' => 'PIN yang Anda masukkan salah.'], 403);
     }
+
+    public function ping(Inventory $inventory)
+    {
+        $ip = $inventory->ip_address;
+        
+        // Windows Ping: ping -n 1 -w 1000 IP
+        // Linux Ping: ping -c 1 -W 1 IP
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $command = $isWindows 
+            ? "ping -n 1 -w 1000 " . escapeshellarg($ip) 
+            : "ping -c 1 -W 1 " . escapeshellarg($ip);
+            
+        $output = [];
+        $result = -1;
+        exec($command, $output, $result);
+        
+        $outputStr = strtolower(implode(" ", $output));
+        $isOnline = false;
+        
+        if (strpos($outputStr, 'ttl=') !== false) {
+            $isOnline = true;
+        }
+        
+        return response()->json([
+            'status' => $isOnline ? 'online' : 'offline',
+            'ip' => $ip
+        ]);
+    }
+
+    public function downloadRdp(Inventory $inventory)
+    {
+        $ip = $inventory->ip_address;
+        // Clean name for safe filename
+        $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '_', $inventory->nama_user);
+        $filename = "Remote_{$cleanName}_{$ip}.rdp";
+        
+        $content = "full address:s:{$ip}\r\n";
+        $content .= "prompt for credentials:i:1\r\n";
+        $content .= "screen mode id:i:2\r\n"; // Fullscreen
+        
+        return response($content)
+            ->header('Content-Type', 'application/x-rdp')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
 }

@@ -63,6 +63,12 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::post('/vault/set-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'setPin'])->name('vault.set-pin');
         Route::post('/vault/verify-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'verifyPin'])->name('vault.verify-pin');
         Route::post('/{inventory}/reveal', [\App\Http\Controllers\ITSas\InventoryController::class, 'revealPassword'])->name('vault.reveal');
+        
+        // Ping Endpoint
+        Route::get('/{inventory}/ping', [\App\Http\Controllers\ITSas\InventoryController::class, 'ping'])->name('ping');
+        
+        // RDP Endpoint
+        Route::get('/{inventory}/rdp', [\App\Http\Controllers\ITSas\InventoryController::class, 'downloadRdp'])->name('rdp');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

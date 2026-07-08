@@ -3,11 +3,63 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Inventory;
+use App\Models\Department;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('pages.dashboard');
+        $period = $request->get('period', 'all'); // Default or requested period
+        
+        $dateFilter = function($query) use ($period) {
+            if ($period === 'today') {
+                $query->whereDate('created_at', \Carbon\Carbon::today());
+            } elseif ($period === '7days') {
+                $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(7));
+            } elseif ($period === '30days') {
+                $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(30));
+            } elseif ($period === 'lastmonth') {
+                $query->whereMonth('created_at', \Carbon\Carbon::now()->subMonth()->month)
+                      ->whereYear('created_at', \Carbon\Carbon::now()->subMonth()->year);
+            }
+        };
+
+        // 1. Total PC/User (Inventory Count)
+        $inventoryQuery = Inventory::query();
+        $dateFilter($inventoryQuery);
+        $totalInventory = $inventoryQuery->count();
+        
+        // Departments usually don't need period filter, but we'll leave it as total
+        $totalDepartments = Department::count();
+
+        // 2. Chart Data: Inventory Count per Department
+        $chartQuery = Inventory::select('department_id', DB::raw('count(*) as total'))
+            ->with('department')
+            ->groupBy('department_id');
+        $dateFilter($chartQuery);
+        $departmentStats = $chartQuery->get();
+            
+        $chartLabels = $departmentStats->map(function ($item) {
+            return $item->department ? $item->department->name : 'Unknown';
+        });
+        
+        $chartSeries = $departmentStats->pluck('total');
+
+        // 3. Recent Activities
+        $logPerPage = $request->get('log_per_page', 5);
+        $logQuery = ActivityLog::with('user')->latest();
+        $dateFilter($logQuery);
+        $recentActivities = $logQuery->paginate($logPerPage)->withQueryString();
+
+        return view('dashboard.itsas', compact(
+            'totalInventory', 
+            'totalDepartments',
+            'chartLabels', 
+            'chartSeries', 
+            'recentActivities'
+        ));
     }
 }

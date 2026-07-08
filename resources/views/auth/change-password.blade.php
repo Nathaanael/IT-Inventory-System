@@ -28,7 +28,7 @@
             <div class="px-8 py-8">
                 <h3 class="text-xl font-semibold text-gray-800 mb-2">Reset Password</h3>
                 <p class="text-sm text-gray-600 mb-1">Almost done. Enter your new password and you're all set.</p>
-                <p class="text-xs text-gray-500 mb-6">The password is being reset for account: <strong class="text-gray-700">nathan (50180670)</strong>.</p>
+                <p class="text-xs text-gray-500 mb-6">The password is being reset for account: <strong class="text-gray-700">{{ auth()->user()->name }} ({{ auth()->user()->id_karyawan }})</strong>.</p>
                 
                 <form action="{{ route('auth.change-password.update') }}" method="POST" class="space-y-4">
                     @csrf

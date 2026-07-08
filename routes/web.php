@@ -48,15 +48,16 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'first_login'])->group(function () {
 
     // ── Dashboard ──────────────────────────────────────
-    Route::get('/dashboard', function () {
-        return view('dashboard.itsas', ['title' => 'Dashboard']);
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // ── Inventory Management (User, IP, Password) ──────
-    Route::middleware(['role:IT SAS Supervisor,Super Admin'])->prefix('inventory')->name('inventory.')->group(function () {
-        Route::get('/', function () {
-            return view('inventory.inventory', ['title' => 'Data Inventory']);
-        })->name('index');
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ITSas\InventoryController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ITSas\InventoryController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ITSas\InventoryController::class, 'store'])->name('store');
+        Route::get('/{inventory}/edit', [\App\Http\Controllers\ITSas\InventoryController::class, 'edit'])->name('edit');
+        Route::put('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'update'])->name('update');
+        Route::delete('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'destroy'])->name('destroy');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──
@@ -64,20 +65,25 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         
         // Logs
         Route::prefix('logs')->name('logs.')->group(function () {
-            Route::get('/', function () {
-                return "Halaman Audit & Activity Logs";
-            })->name('index');
+            Route::get('/', [\App\Http\Controllers\Sadmin\AuditController::class, 'index'])->name('index');
         });
 
         // Master Data Users & Departments
         Route::prefix('master')->name('master.')->group(function () {
-            Route::get('/users', function () {
-                return "Halaman Manajemen User";
-            })->name('users');
             
-            Route::get('/departments', function () {
-                return "Halaman Master Departemen";
-            })->name('departments');
+            Route::prefix('users')->name('users.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Sadmin\UserController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Sadmin\UserController::class, 'store'])->name('store');
+                Route::put('/{user}', [\App\Http\Controllers\Sadmin\UserController::class, 'update'])->name('update');
+                Route::delete('/{user}', [\App\Http\Controllers\Sadmin\UserController::class, 'destroy'])->name('destroy');
+            });
+            
+            Route::prefix('departments')->name('departments.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'store'])->name('store');
+                Route::put('/{department}', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'update'])->name('update');
+                Route::delete('/{department}', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'destroy'])->name('destroy');
+            });
         });
 
     });

@@ -18,8 +18,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'id_karyawan',
+        'username_ad',
         'name',
         'email',
+        'role',
         'password',
     ];
 
@@ -44,5 +47,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class, 'created_by');
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }

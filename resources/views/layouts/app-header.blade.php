@@ -48,10 +48,14 @@
                 </svg>
             </button>
 
-            <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+            <a href="/" class="flex flex-col xl:hidden">
+                <!-- Full Text Logo -->
+                <span class="text-2xl font-bold tracking-widest text-brand-500 dark:text-brand-400 leading-none">
+                    GEAR
+                </span>
+                <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">
+                    General Equipment & Asset Repository
+                </span>
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->

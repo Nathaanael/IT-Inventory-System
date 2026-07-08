@@ -31,7 +31,7 @@ class LoginController extends Controller
                 if (Auth::attempt(['username_ad' => $request->username_ad, 'password' => $request->password])) {
                     $request->session()->regenerate();
                     
-                    if (Auth::user()->role === 'IT SAS Supervisor') {
+                    if (Auth::user()->role === 'IT Support') {
                         return redirect()->route('inventory.index');
                     }
                     

@@ -57,7 +57,7 @@ class MenuHelper
                 ],
             ],
 
-            'IT SAS Supervisor' => [
+            'IT Support' => [
                 $dashboard,
                 $inventory,
             ],

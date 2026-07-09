@@ -49,9 +49,15 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:departments,name'
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('departments')->where(fn ($query) => $query->where('unit', $request->unit))
+            ],
+            'unit' => 'required|string|in:HO,BP,PR'
         ], [
-            'name.unique' => 'Nama departemen sudah terdaftar.'
+            'name.unique' => 'Kombinasi nama departemen dan unit sudah terdaftar.'
         ]);
 
         $department = Department::create($validated);
@@ -59,7 +65,7 @@ class DepartmentController extends Controller
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'create',
-            'description' => "menambahkan master departemen baru: {$department->name}",
+            'description' => "menambahkan master departemen baru: {$department->name} ({$department->unit})",
             'ip_address' => request()->ip()
         ]);
 
@@ -69,18 +75,25 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:departments,name,' . $department->id
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('departments')->where(fn ($query) => $query->where('unit', $request->unit))->ignore($department->id)
+            ],
+            'unit' => 'required|string|in:HO,BP,PR'
         ], [
-            'name.unique' => 'Nama departemen sudah terdaftar.'
+            'name.unique' => 'Kombinasi nama departemen dan unit sudah terdaftar.'
         ]);
 
         $oldName = $department->name;
+        $oldUnit = $department->unit;
         $department->update($validated);
 
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'update',
-            'description' => "mengubah nama master departemen dari {$oldName} menjadi {$department->name}",
+            'description' => "mengubah nama master departemen dari {$oldName} ({$oldUnit}) menjadi {$department->name} ({$department->unit})",
             'ip_address' => request()->ip()
         ]);
 
@@ -95,12 +108,13 @@ class DepartmentController extends Controller
         }
 
         $deptName = $department->name;
+        $deptUnit = $department->unit;
         $department->delete();
 
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'delete',
-            'description' => "menghapus master departemen: {$deptName}",
+            'description' => "menghapus master departemen: {$deptName} ({$deptUnit})",
             'ip_address' => request()->ip()
         ]);
 

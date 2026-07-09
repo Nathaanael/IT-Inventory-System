@@ -8,9 +8,13 @@ class Inventory extends Model
 {
     protected $fillable = [
         'nama_user',
+        'id_karyawan',
+        'username_ad',
+        'nomor_asset_pc',
         'department_id',
         'ip_address',
         'password_remote',
+        'notes',
         'created_by'
     ];
 

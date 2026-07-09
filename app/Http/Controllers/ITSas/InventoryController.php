@@ -18,6 +18,7 @@ class InventoryController extends Controller
     {
         $search = $request->query('search');
         $perPage = $request->query('per_page', 5); // Default 5
+        $unit = $request->query('unit', 'Semua');
         
         $allowedPerPage = [5, 10, 20, 50];
         if (!in_array($perPage, $allowedPerPage)) {
@@ -38,6 +39,12 @@ class InventoryController extends Controller
             });
         }
 
+        if ($unit !== 'Semua') {
+            $query->whereHas('department', function($q) use ($unit) {
+                $q->where('unit', $unit);
+            });
+        }
+
         if ($sort === 'oldest') {
             $query->oldest();
         } else {
@@ -46,7 +53,16 @@ class InventoryController extends Controller
 
         $inventories = $query->paginate($perPage)->withQueryString();
 
-        return view('inventory.inventory', compact('inventories', 'perPage'));
+        $todayNewInventories = Inventory::whereDate('created_at', today())->with('department')->get();
+        
+        $newCount = [
+            'Semua' => $todayNewInventories->count(),
+            'HO' => $todayNewInventories->where('department.unit', 'HO')->count(),
+            'BP' => $todayNewInventories->where('department.unit', 'BP')->count(),
+            'PR' => $todayNewInventories->where('department.unit', 'PR')->count(),
+        ];
+
+        return view('inventory.inventory', compact('inventories', 'perPage', 'unit', 'newCount'));
     }
 
     public function create()
@@ -62,15 +78,23 @@ class InventoryController extends Controller
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address',
             'password_remote' => 'required|string',
+            'id_karyawan' => 'nullable|numeric',
+            'username_ad' => 'nullable|string|max:255',
+            'nomor_asset_pc' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ], [
             'ip_address.unique' => 'IP Address ini sudah terdaftar dan digunakan oleh user lain.'
         ]);
 
         $inventory = Inventory::create([
             'nama_user' => $validated['nama_user'],
+            'id_karyawan' => $validated['id_karyawan'] ?? null,
+            'username_ad' => $validated['username_ad'] ?? null,
+            'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
             'department_id' => $validated['departemen'],
             'ip_address' => $validated['ip_address'],
             'password_remote' => Crypt::encryptString($validated['password_remote']),
+            'notes' => $validated['notes'] ?? null,
             'created_by' => Auth::id(),
         ]);
         
@@ -106,15 +130,23 @@ class InventoryController extends Controller
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address,' . $inventory->id,
             'password_remote' => 'required|string',
+            'id_karyawan' => 'nullable|numeric',
+            'username_ad' => 'nullable|string|max:255',
+            'nomor_asset_pc' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ], [
             'ip_address.unique' => 'IP Address ini sudah terdaftar dan digunakan oleh user lain.'
         ]);
 
         $inventory->update([
             'nama_user' => $validated['nama_user'],
+            'id_karyawan' => $validated['id_karyawan'] ?? null,
+            'username_ad' => $validated['username_ad'] ?? null,
+            'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
             'department_id' => $validated['departemen'],
             'ip_address' => $validated['ip_address'],
             'password_remote' => Crypt::encryptString($validated['password_remote']),
+            'notes' => $validated['notes'] ?? null,
         ]);
         
         $departmentName = Department::find($validated['departemen'])->name;

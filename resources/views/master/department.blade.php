@@ -113,10 +113,11 @@
                     formData = {
                         id: $event.detail.id,
                         name: $event.detail.name,
+                        unit: $event.detail.unit,
                     };
                     formAction = '{{ route('master.departments.update', 'REPLACE_ID') }}'.replace('REPLACE_ID', formData.id);
                 } else {
-                    formData = { id: null, name: '' };
+                    formData = { id: null, name: '', unit: 'HO' };
                     formAction = '{{ route('master.departments.store') }}';
                 }
             "
@@ -153,6 +154,16 @@
                         <div>
                             <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Departemen</label>
                             <input type="text" name="name" x-model="formData.name" required class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 transition-colors" placeholder="Contoh: Finance & Accounting">
+                        </div>
+
+                        <!-- Unit -->
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
+                            <select name="unit" x-model="formData.unit" required class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 transition-colors cursor-pointer">
+                                <option value="HO">HO (Head Office)</option>
+                                <option value="BP">BP</option>
+                                <option value="PR">PR</option>
+                            </select>
                         </div>
                     </div>
 
@@ -245,6 +256,7 @@
             formData: {
                 id: null,
                 name: '',
+                unit: 'HO',
             },
             
             init() {

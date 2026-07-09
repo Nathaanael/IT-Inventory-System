@@ -84,44 +84,37 @@
                 </div>
 
             </div>
-
-            <!-- Team Avatars Section -->
-            <!-- <div class="pt-7 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between">
-                <div>
-                    <h4 class="text-base font-extrabold text-gray-900 dark:text-white mb-1">Aktivitas Tim IT Hari Ini!</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Beberapa staf IT telah mengubah data IP.</p>
-                </div>
-                <div class="flex items-center gap-5">
-                    <div class="flex -space-x-4">
-                        <img class="w-12 h-12 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://ui-avatars.com/api/?name=IT+Admin&background=4F46E5&color=fff&bold=true" alt="User">
-                        <img class="w-12 h-12 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://ui-avatars.com/api/?name=Nathan&background=10B981&color=fff&bold=true" alt="User">
-                        <img class="w-12 h-12 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://ui-avatars.com/api/?name=Siti&background=F59E0B&color=fff&bold=true" alt="User">
-                        <img class="w-12 h-12 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://ui-avatars.com/api/?name=Budi&background=EF4444&color=fff&bold=true" alt="User">
-                    </div>
-                    <button class="w-12 h-12 rounded-full border-2 border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:border-gray-300 dark:hover:text-white dark:hover:border-gray-600 transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </button>
-                </div>
-            </div> -->
         </div>
 
         <!-- Chart Bento Box -->
         <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-gray-100 dark:border-gray-800">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center justify-between mb-4">
                 <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Sebaran per Departemen</h2>
-                <select class="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-full px-5 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 focus:ring-0 cursor-pointer outline-none">
-                    <option>Semua Data</option>
-                </select>
-            </div>
-            
-            <div class="relative w-full">
-                <!-- Large Background Text (like the $10.2m in the image) -->
-                <div class="absolute bottom-4 left-0 text-gray-100 dark:text-gray-800/50 font-black text-6xl tracking-tighter pointer-events-none z-0">
-                    {{ $totalInventory }} IP
+                <div class="relative">
+                    <select @change="updatePeriod($event)" class="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-brand-500 text-sm font-medium dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
+                        <option value="all" {{ request('period') == 'all' || !request('period') ? 'selected' : '' }}>Semua Data</option>
+                        <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Hari Ini</option>
+                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Minggu Ini</option>
+                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
                 </div>
-                <!-- The Chart -->
-                <div id="chartDepartments" class="relative z-10"></div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 dark:border-gray-800 mb-6 w-full gap-2">
+                <template x-for="tab in ['Semua', 'HO', 'BP', 'PR']" :key="tab">
+                    <button type="button" @click="changeChartTab(tab)"
+                            :class="activeChartTab === tab ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 font-medium'"
+                            class="px-6 py-2.5 border-b-2 text-sm transition-colors uppercase tracking-widest"
+                            x-text="tab"></button>
+                </template>
+            </div>
+
+            <div class="flex-1 w-full min-h-[300px]">
+                <div id="departmentChart" class="w-full h-full"></div>
             </div>
         </div>
 
@@ -173,16 +166,23 @@
                 @endforelse
             </div>
             
-            <div class="mt-8 pt-2">
-                {{ $recentActivities->links() }}
+            <style>
+                .log-pagination nav > div.sm\:flex {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 0.75rem !important;
+                }
+            </style>
+            <div class="mt-8 pt-2 log-pagination">
+                {{ $recentActivities->onEachSide(0)->links() }}
             </div>
         </div>
 
     </div>
 </div>
 </div>
-<!-- End wrapper dashboardContainer -->
-<div id="chartDataStore" data-labels="{{ json_encode($chartLabels) }}" data-series="{{ json_encode($chartSeries) }}" style="display: none;"></div>
+<div id="chartDataStore" data-chart="{{ json_encode($chartData) }}" style="display: none;"></div>
 
 @endsection
 
@@ -194,9 +194,10 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('dashboardData', () => ({
             isLoading: false,
+            activeChartTab: 'Semua',
             
             init() {
-                // Intercept pagination clicks
+                this.renderChart();
                 this.$el.addEventListener('click', (e) => {
                     const link = e.target.closest('nav[role="navigation"] a');
                     if (link) {
@@ -206,180 +207,126 @@
                 });
             },
             
+            changeChartTab(tab) {
+                this.activeChartTab = tab;
+                if (dashboardChartInstance) {
+                    const store = document.getElementById('chartDataStore');
+                    if (!store) return;
+                    const allData = JSON.parse(store.dataset.chart || '{}');
+                    const activeData = allData[tab] || {labels: [], series: []};
+                    
+                    const treemapData = activeData.labels.map((label, i) => ({
+                        x: label,
+                        y: activeData.series[i]
+                    }));
+
+                    dashboardChartInstance.updateSeries([{
+                        data: treemapData
+                    }]);
+                }
+            },
+
+            renderChart() {
+                const chartElement = document.querySelector("#departmentChart");
+                if (!chartElement) return;
+
+                const store = document.getElementById('chartDataStore');
+                if (!store) return;
+                
+                const allData = JSON.parse(store.dataset.chart || '{}');
+                const activeData = allData[this.activeChartTab] || {labels: [], series: []};
+                
+                const labels = activeData.labels;
+                const series = activeData.series;
+
+                if (dashboardChartInstance) {
+                    dashboardChartInstance.destroy();
+                }
+
+                const isDark = document.documentElement.classList.contains('dark');
+
+                // Build treemap data: [{x: 'Dept Name', y: count}, ...]
+                const treemapData = labels.map((label, i) => ({
+                    x: label,
+                    y: series[i]
+                }));
+
+                const palette = [
+                    '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd',
+                    '#818cf8', '#7c3aed', '#5b21b6', '#4f46e5',
+                    '#4338ca', '#3730a3', '#6d28d9', '#9333ea'
+                ];
+
+                const options = {
+                    series: [{ data: treemapData }],
+                    chart: { 
+                        type: 'treemap', 
+                        height: 320, 
+                        toolbar: { show: false }, 
+                        fontFamily: 'inherit',
+                        animations: { enabled: true, easing: 'easeinout', speed: 800 }
+                    },
+                    colors: palette,
+                    plotOptions: {
+                        treemap: {
+                            distributed: true,
+                            enableShades: false
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        style: { fontSize: '14px', fontWeight: 700 },
+                        formatter: function(text, op) {
+                            return [text, op.value + ' PC'];
+                        },
+                        offsetY: -2
+                    },
+                    legend: { show: false },
+                    tooltip: { 
+                        y: { formatter: function (val) { return val + " PC terdaftar" } },
+                        theme: isDark ? 'dark' : 'light',
+                        style: { fontSize: '13px', fontFamily: 'inherit' }
+                    }
+                };
+
+                dashboardChartInstance = new ApexCharts(chartElement, options);
+                dashboardChartInstance.render();
+            },
+            
             updatePeriod(event) {
                 let url = new URL(window.location.href);
                 url.searchParams.set('period', event.target.value);
-                url.searchParams.delete('page'); // Reset to page 1
+                url.searchParams.delete('page');
                 this.fetchData(url.toString());
             },
 
             updateLogPerPage(event) {
                 let url = new URL(window.location.href);
                 url.searchParams.set('log_per_page', event.target.value);
-                url.searchParams.delete('page'); // Reset to page 1
+                url.searchParams.delete('page');
                 this.fetchData(url.toString());
             },
             
             fetchData(url) {
                 this.isLoading = true;
-                
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Replace content 
                     const newContent = doc.querySelector('#dashboardContent');
                     if (newContent) {
                         document.querySelector('#dashboardContent').innerHTML = newContent.innerHTML;
-                        
-                        // Re-render chart since the DOM element was replaced
-                        const chartDataStore = doc.querySelector('#chartDataStore');
-                        if(chartDataStore) {
-                            const newLabels = JSON.parse(chartDataStore.dataset.labels);
-                            const newSeries = JSON.parse(chartDataStore.dataset.series);
-                            window.renderDashboardChart(newLabels, newSeries);
+                        const newStore = doc.querySelector('#chartDataStore');
+                        if(newStore) {
+                            document.querySelector('#chartDataStore').dataset.chart = newStore.dataset.chart;
+                            this.renderChart();
                         }
                     }
-                    
                     window.history.pushState({}, '', url);
                 })
-                .finally(() => {
-                    this.isLoading = false;
-                });
+                .finally(() => { this.isLoading = false; });
             }
         }));
-    });
-
-    window.renderDashboardChart = function(labels, series) {
-        const chartElement = document.querySelector("#chartDepartments");
-        if(!chartElement) return;
-
-        if (dashboardChartInstance) {
-            dashboardChartInstance.destroy();
-        }
-        
-        // Find the index of the highest value to color it differently
-        const maxVal = Math.max(...series);
-        const maxIndex = series.indexOf(maxVal);
-
-        const isDark = document.documentElement.classList.contains('dark');
-        const inactiveBarColor = isDark ? '#1e293b' : '#f1f5f9'; // slate-800 or slate-100
-        const activeBarColor = '#22c55e'; // Bright emerald green
-
-        const options = {
-            series: [{
-                name: "Jumlah PC / IP",
-                data: series
-            }],
-            chart: {
-                type: 'bar',
-                height: 320,
-                toolbar: { show: false },
-                fontFamily: 'inherit',
-                animations: {
-                    enabled: true,
-                    easing: 'easeinout',
-                    speed: 800
-                }
-            },
-            colors: [
-                function({ value, seriesIndex, dataPointIndex, w }) {
-                    if (dataPointIndex === maxIndex) {
-                        return activeBarColor;
-                    }
-                    return inactiveBarColor;
-                }
-            ],
-            plotOptions: {
-                bar: {
-                    horizontal: false,
-                    columnWidth: '40%',
-                    borderRadius: 8,
-                    borderRadiusApplication: 'end',
-                    distributed: true, // Allow different colors per bar
-                },
-            },
-            dataLabels: {
-                enabled: false
-            },
-            legend: {
-                show: false
-            },
-            stroke: {
-                show: false
-            },
-            xaxis: {
-                categories: labels,
-                axisBorder: { show: false },
-                axisTicks: { show: false },
-                labels: {
-                    style: {
-                        colors: isDark ? '#64748b' : '#94a3b8',
-                        fontWeight: 700,
-                        fontSize: '12px'
-                    },
-                    offsetY: 5
-                }
-            },
-            yaxis: {
-                show: false, // Hide Y axis completely to match the design image
-            },
-            grid: {
-                show: false, // Hide all grid lines
-            },
-            fill: {
-                opacity: 1
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val + " PC terdaftar"
-                    }
-                },
-                theme: isDark ? 'dark' : 'light',
-                style: {
-                    fontSize: '13px',
-                    fontFamily: 'inherit'
-                }
-            }
-        };
-
-        dashboardChartInstance = new ApexCharts(chartElement, options);
-        dashboardChartInstance.render();
-        
-        // Ensure we only attach the observer once globally
-        if(!window.chartThemeObserver) {
-            window.chartThemeObserver = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.attributeName === "class" && dashboardChartInstance) {
-                        const newIsDark = document.documentElement.classList.contains('dark');
-                        const newInactiveBarColor = newIsDark ? '#1e293b' : '#f1f5f9';
-                        
-                        dashboardChartInstance.updateOptions({
-                            colors: [
-                                function({ value, seriesIndex, dataPointIndex, w }) {
-                                    return dataPointIndex === maxIndex ? activeBarColor : newInactiveBarColor;
-                                }
-                            ],
-                            tooltip: { theme: newIsDark ? 'dark' : 'light' },
-                            xaxis: {
-                                labels: { style: { colors: newIsDark ? '#64748b' : '#94a3b8' } }
-                            }
-                        });
-                    }
-                });
-            });
-            window.chartThemeObserver.observe(document.documentElement, { attributes: true });
-        }
-    };
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const initialLabels = JSON.parse(document.querySelector('#chartDataStore').dataset.labels);
-        const initialSeries = JSON.parse(document.querySelector('#chartDataStore').dataset.series);
-        window.renderDashboardChart(initialLabels, initialSeries);
     });
 </script>

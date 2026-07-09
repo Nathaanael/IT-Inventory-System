@@ -42,11 +42,25 @@ class DashboardController extends Controller
         $dateFilter($chartQuery);
         $departmentStats = $chartQuery->get();
             
-        $chartLabels = $departmentStats->map(function ($item) {
-            return $item->department ? $item->department->name : 'Unknown';
-        });
-        
-        $chartSeries = $departmentStats->pluck('total');
+        $chartData = [
+            'Semua' => ['labels' => [], 'series' => []],
+            'HO' => ['labels' => [], 'series' => []],
+            'BP' => ['labels' => [], 'series' => []],
+            'PR' => ['labels' => [], 'series' => []],
+        ];
+
+        foreach ($departmentStats as $stat) {
+            $deptName = $stat->department ? $stat->department->name : 'Unknown';
+            $unit = $stat->department ? $stat->department->unit : '';
+
+            $chartData['Semua']['labels'][] = $deptName;
+            $chartData['Semua']['series'][] = $stat->total;
+
+            if ($unit && isset($chartData[$unit])) {
+                $chartData[$unit]['labels'][] = $deptName;
+                $chartData[$unit]['series'][] = $stat->total;
+            }
+        }
 
         // 3. Recent Activities
         $logPerPage = $request->get('log_per_page', 5);
@@ -57,8 +71,7 @@ class DashboardController extends Controller
         return view('dashboard.itsas', compact(
             'totalInventory', 
             'totalDepartments',
-            'chartLabels', 
-            'chartSeries', 
+            'chartData', 
             'recentActivities'
         ));
     }

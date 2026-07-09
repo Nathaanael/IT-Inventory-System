@@ -21,9 +21,29 @@
             @csrf
             @method('PUT')
 
-            <!-- Grid for Inputs -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Section: Profile User -->
+            <div class="mb-2">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white/90">Profil User</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Informasi data diri pengguna</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 dark:bg-gray-800/20 p-5 rounded-xl border border-gray-100 dark:border-gray-800 mb-8"> 
                 
+                <!-- ID Karyawan -->
+                <div>
+                    <label for="id_karyawan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ID Karyawan</label>
+                    <input type="number" id="id_karyawan" name="id_karyawan" value="{{ old('id_karyawan', $inventory->id_karyawan ?? '') }}" placeholder="Contoh: 12345" class="w-full rounded-lg border @error('id_karyawan') border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-brand-500 focus:ring-brand-500 @enderror bg-transparent px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" />
+                    @error('id_karyawan')
+                        <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Username AD -->
+                <div>
+                    <label for="username_ad" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username AD</label>
+                    <input type="text" id="username_ad" name="username_ad" value="{{ old('username_ad', $inventory->username_ad ?? '') }}" placeholder="Contoh: user.name" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" />
+                </div>
+
                 <!-- Nama User -->
                 <div>
                     <label for="nama_user" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nama User</label>
@@ -35,21 +55,33 @@
 
                 <!-- Departemen -->
                 <div>
-                    <label for="departemen" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Departemen</label>
-                    <div class="relative">
-                        <select id="departemen" name="departemen" class="w-full appearance-none rounded-lg border @error('departemen') border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-brand-500 focus:ring-brand-500 @enderror bg-transparent px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 cursor-pointer shadow-sm" required>
-                            <option value="" disabled selected>Pilih departemen...</option>
-                            @foreach ($departments as $department)
-                                <option value="{{ $department->id }}" {{ old('departemen', $inventory->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
+                    <label for="departemen" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Departemen & Unit</label>
+                    <select id="departemen" name="departemen" class="w-full rounded-lg border @error('departemen') border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-brand-500 focus:ring-brand-500 @enderror bg-transparent px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" required>
+                        <option value="" disabled>Pilih departemen...</option>
+                        @foreach ($departments as $department)
+                            <option value="{{ $department->id }}" {{ old('departemen', $inventory->department_id) == $department->id ? 'selected' : '' }}>
+                                {{ $department->name }} {{ $department->unit ? '('.$department->unit.')' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
                     @error('departemen')
                         <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
                     @enderror
+                </div>
+            </div>
+
+            <!-- Section: Inventory PC -->
+            <div class="mb-2 mt-8">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white/90">Informasi Inventory</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Data teknis perangkat dan koneksi</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-brand-50/30 dark:bg-brand-500/5 p-5 rounded-xl border border-brand-100 dark:border-brand-500/20">
+
+                <!-- Nomor Asset PC -->
+                <div>
+                    <label for="nomor_asset_pc" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nomor Asset PC</label>
+                    <input type="text" id="nomor_asset_pc" name="nomor_asset_pc" value="{{ old('nomor_asset_pc', $inventory->nomor_asset_pc ?? '') }}" placeholder="Contoh: PC-IT-001" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" />
                 </div>
 
                 <!-- IP Address -->
@@ -100,6 +132,12 @@
                     @error('password_remote')
                         <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
                     @enderror
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Tambahkan catatan jika diperlukan..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm">{{ old('notes', $inventory->notes ?? '') }}</textarea>
                 </div>
 
             </div>

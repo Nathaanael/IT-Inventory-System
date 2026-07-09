@@ -29,7 +29,8 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <form action="{{ route('inventory.index') }}" method="GET" class="flex flex-wrap sm:flex-nowrap gap-3" @submit.prevent="performSearch($event.target)">
+                    <form id="searchForm" action="{{ route('inventory.index') }}" method="GET" class="flex flex-wrap sm:flex-nowrap gap-3" @submit.prevent="performSearch($event.target)">
+                        <input type="hidden" name="unit" id="unitFilter" value="{{ request('unit', 'Semua') }}">
                         <div class="relative">
                             <select name="sort" @change="performSearch($event.target.form)" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500">
                                 <option value="latest" {{ request('sort') == 'latest' || !request('sort') ? 'selected' : '' }}>Terbaru</option>
@@ -60,13 +61,74 @@
                 </div>
             </div>
 
+            <!-- Unit Filter Tabs (UI Only) -->
+            <div class="mb-6 flex w-full border-b border-gray-200 dark:border-gray-800" 
+                 x-data="{ 
+                    activeTab: '{{ request('unit', 'Semua') }}', 
+                    visitedTabs: JSON.parse(sessionStorage.getItem('visitedTabs_{{ today()->toDateString() }}') || '[]'),
+                    markVisited(tab) {
+                        if (!this.visitedTabs.includes(tab)) {
+                            this.visitedTabs.push(tab);
+                            sessionStorage.setItem('visitedTabs_{{ today()->toDateString() }}', JSON.stringify(this.visitedTabs));
+                        }
+                    },
+                    init() {
+                        this.markVisited(this.activeTab);
+                    }
+                 }">
+                <button @click="activeTab = 'Semua'; markVisited('Semua'); document.getElementById('unitFilter').value = 'Semua'; performSearch(document.getElementById('searchForm'))" type="button" 
+                    :class="activeTab === 'Semua' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium'"
+                    class="flex flex-1 items-center justify-center whitespace-nowrap border-b-[3px] py-3 px-1 text-sm uppercase tracking-wide transition-colors mb-[-1px]">
+                    Semua
+                    <!-- Bubble Tanda Karyawan Masuk (Dinamic) -->
+                    @if(isset($newCount['Semua']) && $newCount['Semua'] > 0)
+                        <span x-show="!visitedTabs.includes('Semua')" class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm" x-cloak>
+                            {{ $newCount['Semua'] }}
+                        </span>
+                    @endif
+                </button>
+                <button @click="activeTab = 'HO'; markVisited('HO'); document.getElementById('unitFilter').value = 'HO'; performSearch(document.getElementById('searchForm'))" type="button" 
+                    :class="activeTab === 'HO' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium'"
+                    class="flex flex-1 items-center justify-center whitespace-nowrap border-b-[3px] py-3 px-1 text-sm uppercase tracking-wide transition-colors mb-[-1px]">
+                    HO
+                    @if(isset($newCount['HO']) && $newCount['HO'] > 0)
+                        <span x-show="!visitedTabs.includes('HO')" class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm" x-cloak>
+                            {{ $newCount['HO'] }}
+                        </span>
+                    @endif
+                </button>
+                <button @click="activeTab = 'BP'; markVisited('BP'); document.getElementById('unitFilter').value = 'BP'; performSearch(document.getElementById('searchForm'))" type="button" 
+                    :class="activeTab === 'BP' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium'"
+                    class="flex flex-1 items-center justify-center whitespace-nowrap border-b-[3px] py-3 px-1 text-sm uppercase tracking-wide transition-colors mb-[-1px]">
+                    BP
+                    @if(isset($newCount['BP']) && $newCount['BP'] > 0)
+                        <span x-show="!visitedTabs.includes('BP')" class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm" x-cloak>
+                            {{ $newCount['BP'] }}
+                        </span>
+                    @endif
+                </button>
+                <button @click="activeTab = 'PR'; markVisited('PR'); document.getElementById('unitFilter').value = 'PR'; performSearch(document.getElementById('searchForm'))" type="button" 
+                    :class="activeTab === 'PR' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium'"
+                    class="flex flex-1 items-center justify-center whitespace-nowrap border-b-[3px] py-3 px-1 text-sm uppercase tracking-wide transition-colors mb-[-1px]">
+                    PR
+                    @if(isset($newCount['PR']) && $newCount['PR'] > 0)
+                        <span x-show="!visitedTabs.includes('PR')" class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm" x-cloak>
+                            {{ $newCount['PR'] }}
+                        </span>
+                    @endif
+                </button>
+            </div>
+
             <!-- Table Data -->
             <div id="inventory-table-container" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 relative">
                 <table class="w-full table-auto">
                     <thead class="bg-gray-50 text-left dark:bg-gray-800/50">
                         <tr>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">No</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Nama User</th>
+                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Computer Name</th>
+                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">ID Karyawan</th>
+                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">User AD</th>
+                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">No. Asset</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Departemen</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">IP Address</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Password Remote</th>
@@ -78,8 +140,16 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="inventoryRow({{ $inventory->id }})" @password-verified.window="if($event.detail.id === rowId) { showPassword = true; revealedPassword = $event.detail.password; }">
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventories->firstItem() + $index }}</td>
                             <td class="px-5 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{{ $inventory->nama_user }}</td>
+                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->id_karyawan ?? '-' }}</td>
+                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->username_ad ?? '-' }}</td>
+                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->nomor_asset_pc ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                <span class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{{ $inventory->department->name ?? '-' }}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">{{ $inventory->department->unit ?? '-' }}</span>
+                                    @if($inventory->department && $inventory->department->unit)
+                                        <span class="inline-flex rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-400/10 dark:text-purple-400 dark:ring-purple-400/30">{{ $inventory->department->name }}</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-2">
@@ -108,6 +178,18 @@
                             </td>
                             <td class="px-5 py-4 text-center">
                                 <div class="flex items-center justify-center gap-3">
+                                    <button @click="$dispatch('open-detail-modal', {
+                                        nama_user: {{ Js::from($inventory->nama_user) }},
+                                        id_karyawan: {{ Js::from($inventory->id_karyawan ?? '-') }},
+                                        username_ad: {{ Js::from($inventory->username_ad ?? '-') }},
+                                        nomor_asset_pc: {{ Js::from($inventory->nomor_asset_pc ?? '-') }},
+                                        department: {{ Js::from($inventory->department->name ?? '-') }},
+                                        unit: {{ Js::from($inventory->department->unit ?? '-') }},
+                                        ip_address: {{ Js::from($inventory->ip_address) }},
+                                        notes: {{ Js::from($inventory->notes ?? '-') }}
+                                    })" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
                                     <a href="{{ route('inventory.rdp', $inventory->id) }}" class="text-green-500 hover:text-green-700 transition-colors" title="Download RDP (One-Click Remote)" target="_blank">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                     </a>
@@ -122,7 +204,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                            <td colspan="9" class="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                 Tidak ada data inventory yang ditemukan.
                             </td>
                         </tr>
@@ -274,6 +356,83 @@
             </div>
         </template>
 
+        <!-- Modal Detail Overlay -->
+        <template x-teleport="body">
+            <div 
+                x-show="showDetailModal" 
+                @open-detail-modal.window="showDetailModal = true; detailData = $event.detail;"
+                class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
+                x-transition.opacity 
+                style="display: none;"
+            >
+                <div 
+                    class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
+                    @click.away="showDetailModal = false" 
+                    x-show="showDetailModal"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                >
+                    <div class="mb-5 flex items-center justify-between text-indigo-500">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Detail Inventory</h3>
+                        </div>
+                        <button @click="showDetailModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-800 dark:text-gray-200 mb-6">
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Computer Name</p>
+                            <p class="font-semibold" x-text="detailData.nama_user"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">IP Address</p>
+                            <p class="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded inline-block" x-text="detailData.ip_address"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Departemen</p>
+                            <p class="font-semibold" x-text="detailData.department"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Unit</p>
+                            <p class="font-semibold" x-text="detailData.unit"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">ID Karyawan</p>
+                            <p class="font-semibold" x-text="detailData.id_karyawan"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Username AD</p>
+                            <p class="font-semibold" x-text="detailData.username_ad"></p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">No. Asset PC</p>
+                            <p class="font-semibold" x-text="detailData.nomor_asset_pc"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1 mb-6">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Notes</p>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                            <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap" x-text="detailData.notes"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <button type="button" @click="showDetailModal = false" class="rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
     </div>
 
     <!-- Alpine Logic -->
@@ -314,6 +473,9 @@
                 setupPinConfirm: '',
                 setupError: '',
                 isSavingPin: false,
+
+                showDetailModal: false,
+                detailData: {},
 
                 showModal: false,
                 activeRowId: null,

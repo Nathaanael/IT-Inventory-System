@@ -144,12 +144,13 @@
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->username_ad ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->nomor_asset_pc ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">{{ $inventory->department->unit ?? '-' }}</span>
-                                    @if($inventory->department && $inventory->department->unit)
-                                        <span class="inline-flex rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-400/10 dark:text-purple-400 dark:ring-purple-400/30">{{ $inventory->department->name }}</span>
-                                    @endif
-                                </div>
+                                @if($inventory->department)
+                                    <span class="inline-flex rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-400/10 dark:text-purple-400 dark:ring-purple-400/30">
+                                        {{ $inventory->department->unit ? $inventory->department->unit . ' - ' : '' }}{{ $inventory->department->name }}
+                                    </span>
+                                @else
+                                    -
+                                @endif
                             </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-2">
@@ -183,8 +184,7 @@
                                         id_karyawan: {{ Js::from($inventory->id_karyawan ?? '-') }},
                                         username_ad: {{ Js::from($inventory->username_ad ?? '-') }},
                                         nomor_asset_pc: {{ Js::from($inventory->nomor_asset_pc ?? '-') }},
-                                        department: {{ Js::from($inventory->department->name ?? '-') }},
-                                        unit: {{ Js::from($inventory->department->unit ?? '-') }},
+                                        department: {{ Js::from($inventory->department ? ($inventory->department->unit ? $inventory->department->unit . ' - ' : '') . $inventory->department->name : '-') }},
                                         ip_address: {{ Js::from($inventory->ip_address) }},
                                         notes: {{ Js::from($inventory->notes ?? '-') }}
                                     })" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
@@ -225,11 +225,22 @@
         <template x-teleport="body">
             <div 
                 x-show="showSetupModal" 
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
-                x-transition.opacity 
                 style="display: none;"
             >
                 <div 
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
                     class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                 >
                     <div class="mb-5 flex items-center gap-3 text-brand-500">
@@ -270,20 +281,24 @@
             <div 
                 x-show="showModal" 
                 @open-auth-modal.window="showModal = true; activeRowId = $event.detail.id; authAction = $event.detail.action || 'view'; passwordInput = ''; authError = ''"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
-                x-transition.opacity 
                 style="display: none;"
             >
                 <div 
-                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                     @click.away="showModal = false" 
-                    x-show="showModal"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
+                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                 >
                     <div class="mb-5 flex items-center gap-3 text-red-500">
                         <div class="p-2 bg-red-100 dark:bg-red-500/20 rounded-full">
@@ -318,20 +333,24 @@
             <div 
                 x-show="showDeleteModal" 
                 @open-delete-modal.window="showDeleteModal = true; deleteId = $event.detail.id; deleteUrl = '{{ url('inventory') }}/' + deleteId;"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
-                x-transition.opacity 
                 style="display: none;"
             >
                 <div 
-                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                     @click.away="showDeleteModal = false" 
-                    x-show="showDeleteModal"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
+                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                 >
                     <div class="mb-5 flex items-center gap-3 text-red-500">
                         <div class="p-2 bg-red-100 dark:bg-red-500/20 rounded-full">
@@ -361,20 +380,24 @@
             <div 
                 x-show="showDetailModal" 
                 @open-detail-modal.window="showDetailModal = true; detailData = $event.detail;"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
-                x-transition.opacity 
                 style="display: none;"
             >
                 <div 
-                    class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                     @click.away="showDetailModal = false" 
-                    x-show="showDetailModal"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
+                    class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
                 >
                     <div class="mb-5 flex items-center justify-between text-indigo-500">
                         <div class="flex items-center gap-3">
@@ -400,10 +423,6 @@
                         <div class="space-y-1">
                             <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Departemen</p>
                             <p class="font-semibold" x-text="detailData.department"></p>
-                        </div>
-                        <div class="space-y-1">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Unit</p>
-                            <p class="font-semibold" x-text="detailData.unit"></p>
                         </div>
                         <div class="space-y-1">
                             <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">ID Karyawan</p>

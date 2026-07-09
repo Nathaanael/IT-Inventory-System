@@ -71,6 +71,17 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::get('/{inventory}/rdp', [\App\Http\Controllers\ITSas\InventoryController::class, 'downloadRdp'])->name('rdp');
     });
 
+    // ── Data Switch ──────────────────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('dataswitch')->name('dataswitch.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'index'])->name('index');
+        Route::get('/{dataSwitch}/ping', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'ping'])->name('ping');
+        Route::post('/panel', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'storePanel'])->name('storePanel');
+        Route::post('/switch', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'storeSwitch'])->name('storeSwitch');
+        Route::put('/switch/{dataSwitch}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'updateSwitch'])->name('updateSwitch');
+        Route::delete('/switch/{dataSwitch}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'destroySwitch'])->name('destroySwitch');
+        Route::delete('/panel/{panel}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'destroyPanel'])->name('destroyPanel');
+    });
+
     // ── Activity Logs & Master Data (Hanya Super Admin) ──
     Route::middleware(['role:Super Admin'])->group(function () {
         

@@ -60,7 +60,7 @@
                         <option value="" disabled>Pilih departemen...</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->id }}" {{ old('departemen', $inventory->department_id) == $department->id ? 'selected' : '' }}>
-                                {{ $department->name }} {{ $department->unit ? '('.$department->unit.')' : '' }}
+                                {{ $department->unit ? $department->unit . ' - ' : '' }}{{ $department->name }}
                             </option>
                         @endforeach
                     </select>

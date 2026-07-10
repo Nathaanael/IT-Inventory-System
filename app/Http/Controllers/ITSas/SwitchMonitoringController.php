@@ -41,26 +41,34 @@ class SwitchMonitoringController extends Controller
         ]);
     }
 
-    public function ping(DataSwitch $dataSwitch)
+    public function ping($id)
     {
+        $dataSwitch = DataSwitch::find($id);
+
+        if (!$dataSwitch) {
+            return response()->json(['status' => 'offline', 'error' => 'not_found'], 404);
+        }
+
         $ip = $dataSwitch->ip_address;
-        
-        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-        $command = $isWindows 
-            ? "ping -n 1 -w 1000 " . escapeshellarg($ip) 
-            : "ping -c 1 -W 1 " . escapeshellarg($ip);
-            
-        $output = [];
-        $result = -1;
-        exec($command, $output, $result);
-        
-        $outputStr = strtolower(implode(" ", $output));
-        $isOnline = strpos($outputStr, 'ttl=') !== false;
-        
-        return response()->json([
-            'status' => $isOnline ? 'online' : 'offline',
-            'ip' => $ip
-        ]);
+
+        try {
+            $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+            $command = $isWindows
+                ? "ping -n 1 -w 1000 " . escapeshellarg($ip)
+                : "ping -c 1 -W 1 " . escapeshellarg($ip);
+
+            $output = [];
+            $result = -1;
+            exec($command, $output, $result);
+
+            $outputStr = strtolower(implode(" ", $output));
+            $isOnline = strpos($outputStr, 'ttl=') !== false;
+
+            return response()->json(['status' => $isOnline ? 'online' : 'offline', 'ip' => $ip]);
+        } catch (\Throwable $e) {
+            \Log::warning("Ping error switch {$id} ({$ip}): " . $e->getMessage());
+            return response()->json(['status' => 'offline', 'ip' => $ip, 'error' => 'exception'], 500);
+        }
     }
 }
 

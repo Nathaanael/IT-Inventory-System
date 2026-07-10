@@ -184,7 +184,7 @@
                                            'bg-green-500': selectedSwitch.status === 'online',
                                            'bg-red-500': selectedSwitch.status === 'offline'
                                        }"></span>
-                                 <span x-text="selectedSwitch.status === 'offline' ? 'Offline' : (selectedSwitch.status === 'checking' ? 'Checking...' : 'Online')"></span>
+                                 <span x-text="selectedSwitch.status === 'online' ? 'Online' : (selectedSwitch.status === 'checking' ? 'Checking...' : 'Offline')"></span>
                              </span>
                          </div>
                      </div>
@@ -216,16 +216,19 @@
             pingInterval: null,
 
             init() {
-                // Random delay to stagger requests
-                const delay = Math.random() * 2000;
-                setTimeout(() => this.doPing(), delay);
+                // Random delay (0-15 detik) untuk menyebar request secara acak
+                // Mencegah server Windows error 500 karena terlalu banyak spawn process exec() 'ping' bersamaan
+                const delay = Math.random() * 15000;
                 
-                // Auto-ping every 5 minutes (300000 ms)
-                this.pingInterval = setInterval(() => {
-                    this.status = 'checking';
-                    const d = Math.random() * 2000;
-                    setTimeout(() => this.doPing(), d);
-                }, 300000);
+                setTimeout(() => {
+                    this.doPing();
+                    
+                    // Auto-ping setiap 30 detik (30000 ms) setelah delay pertama
+                    this.pingInterval = setInterval(() => {
+                        this.status = 'checking';
+                        this.doPing();
+                    }, 30000);
+                }, delay);
             },
 
             destroy() {
@@ -235,14 +238,25 @@
             async doPing() {
                 try {
                     const response = await fetch(`/switchmonitoring/${this.id}/ping`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
                     });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
                     const result = await response.json();
-                    this.status = result.status;
+
+                    // Hanya string 'online' persis yang dianggap online.
+                    // Apa pun selain itu (undefined, null, string lain) -> offline.
+                    this.status = result.status === 'online' ? 'online' : 'offline';
                 } catch (e) {
                     this.status = 'offline';
                 }
-                // Dispatch event so parent can recalculate stats
+
                 this.$dispatch('ping-updated');
             },
             

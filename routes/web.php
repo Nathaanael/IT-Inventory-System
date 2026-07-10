@@ -3,9 +3,19 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
-// use App\Http\Controllers\DashboardController;
-// use App\Http\Controllers\InventoryController;
-// use App\Http\Controllers\ActivityLogController;
+
+// ITSAS
+use App\Http\Controllers\ITSas\DataSwitchController;
+use App\Http\Controllers\ITSas\InventoryController;
+use App\Http\Controllers\ITSas\SwitchMonitoringController;
+
+// Sadmin
+use App\Http\Controllers\Sadmin\UserController;
+use App\Http\Controllers\Sadmin\DepartmentController;
+use App\Http\Controllers\Sadmin\AuditController;
+
+// Dashboard
+use App\Http\Controllers\DashboardController;
 
 // ───────────────────────────────────────────────────
 // HOME (Public / Redirect)
@@ -48,38 +58,44 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'first_login'])->group(function () {
 
     // ── Dashboard ──────────────────────────────────────
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ── Inventory Management (User, IP, Password) ──────
     Route::middleware(['role:IT Support,Super Admin'])->prefix('inventory')->name('inventory.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ITSas\InventoryController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\ITSas\InventoryController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\ITSas\InventoryController::class, 'store'])->name('store');
-        Route::get('/{inventory}/edit', [\App\Http\Controllers\ITSas\InventoryController::class, 'edit'])->name('edit');
-        Route::put('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'update'])->name('update');
-        Route::delete('/{inventory}', [\App\Http\Controllers\ITSas\InventoryController::class, 'destroy'])->name('destroy');
+        Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/create', [InventoryController::class, 'create'])->name('create');
+        Route::post('/', [InventoryController::class, 'store'])->name('store');
+        Route::get('/{inventory}/edit', [InventoryController::class, 'edit'])->name('edit');
+        Route::put('/{inventory}', [InventoryController::class, 'update'])->name('update');
+        Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->name('destroy');
         
         // Vault Endpoints
-        Route::post('/vault/set-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'setPin'])->name('vault.set-pin');
-        Route::post('/vault/verify-pin', [\App\Http\Controllers\ITSas\InventoryController::class, 'verifyPin'])->name('vault.verify-pin');
-        Route::post('/{inventory}/reveal', [\App\Http\Controllers\ITSas\InventoryController::class, 'revealPassword'])->name('vault.reveal');
+        Route::post('/vault/set-pin', [InventoryController::class, 'setPin'])->name('vault.set-pin');
+        Route::post('/vault/verify-pin', [InventoryController::class, 'verifyPin'])->name('vault.verify-pin');
+        Route::post('/{inventory}/reveal', [InventoryController::class, 'revealPassword'])->name('vault.reveal');
         
         // Ping Endpoint
-        Route::get('/{inventory}/ping', [\App\Http\Controllers\ITSas\InventoryController::class, 'ping'])->name('ping');
+        Route::get('/{inventory}/ping', [InventoryController::class, 'ping'])->name('ping');
         
         // RDP Endpoint
-        Route::get('/{inventory}/rdp', [\App\Http\Controllers\ITSas\InventoryController::class, 'downloadRdp'])->name('rdp');
+        Route::get('/{inventory}/rdp', [InventoryController::class, 'downloadRdp'])->name('rdp');
     });
 
     // ── Data Switch ──────────────────────────────────────
     Route::middleware(['role:IT Support,Super Admin'])->prefix('dataswitch')->name('dataswitch.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'index'])->name('index');
-        Route::get('/{dataSwitch}/ping', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'ping'])->name('ping');
-        Route::post('/panel', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'storePanel'])->name('storePanel');
-        Route::post('/switch', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'storeSwitch'])->name('storeSwitch');
-        Route::put('/switch/{dataSwitch}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'updateSwitch'])->name('updateSwitch');
-        Route::delete('/switch/{dataSwitch}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'destroySwitch'])->name('destroySwitch');
-        Route::delete('/panel/{panel}', [\App\Http\Controllers\ITSas\DataSwitchController::class, 'destroyPanel'])->name('destroyPanel');
+        Route::get('/', [DataSwitchController::class, 'index'])->name('index');
+        Route::get('/{dataSwitch}/ping', [DataSwitchController::class, 'ping'])->name('ping');
+        Route::post('/panel', [DataSwitchController::class, 'storePanel'])->name('storePanel');
+        Route::post('/switch', [DataSwitchController::class, 'storeSwitch'])->name('storeSwitch');
+        Route::put('/switch/{dataSwitch}', [DataSwitchController::class, 'updateSwitch'])->name('updateSwitch');
+        Route::delete('/switch/{dataSwitch}', [DataSwitchController::class, 'destroySwitch'])->name('destroySwitch');
+        Route::delete('/panel/{panel}', [DataSwitchController::class, 'destroyPanel'])->name('destroyPanel');
+    });
+
+    // ── Switch Monitoring ────────────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('switchmonitoring')->name('switchmonitoring.')->group(function () {
+        Route::get('/', [SwitchMonitoringController::class, 'index'])->name('index');
+        Route::get('/{dataSwitch}/ping', [SwitchMonitoringController::class, 'ping'])->name('ping');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──
@@ -87,24 +103,24 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         
         // Logs
         Route::prefix('logs')->name('logs.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Sadmin\AuditController::class, 'index'])->name('index');
+            Route::get('/', [AuditController::class, 'index'])->name('index');
         });
 
         // Master Data Users & Departments
         Route::prefix('master')->name('master.')->group(function () {
             
             Route::prefix('users')->name('users.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Sadmin\UserController::class, 'index'])->name('index');
-                Route::post('/', [\App\Http\Controllers\Sadmin\UserController::class, 'store'])->name('store');
-                Route::put('/{user}', [\App\Http\Controllers\Sadmin\UserController::class, 'update'])->name('update');
-                Route::delete('/{user}', [\App\Http\Controllers\Sadmin\UserController::class, 'destroy'])->name('destroy');
+                Route::get('/', [UserController::class, 'index'])->name('index');
+                Route::post('/', [UserController::class, 'store'])->name('store');
+                Route::put('/{user}', [UserController::class, 'update'])->name('update');
+                Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
             });
             
             Route::prefix('departments')->name('departments.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'index'])->name('index');
-                Route::post('/', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'store'])->name('store');
-                Route::put('/{department}', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'update'])->name('update');
-                Route::delete('/{department}', [\App\Http\Controllers\Sadmin\DepartmentController::class, 'destroy'])->name('destroy');
+                Route::get('/', [DepartmentController::class, 'index'])->name('index');
+                Route::post('/', [DepartmentController::class, 'store'])->name('store');
+                Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
+                Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
             });
         });
 

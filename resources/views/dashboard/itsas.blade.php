@@ -56,10 +56,6 @@
                     <div class="flex items-center gap-4">
                         <h3 class="text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">{{ $totalInventory }}</h3>
                         <div class="flex flex-col">
-                            <span class="inline-flex items-center gap-1 text-xs font-bold text-red-500 bg-red-100 dark:bg-red-500/20 px-2.5 py-1 rounded-md w-max">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
-                                2.4%
-                            </span>
                             <span class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mt-1 uppercase tracking-wider">vs last month</span>
                         </div>
                     </div>
@@ -74,10 +70,6 @@
                     <div class="flex items-center gap-4">
                         <h3 class="text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">{{ $totalDepartments }}</h3>
                         <div class="flex flex-col">
-                            <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-100 dark:bg-emerald-500/20 px-2.5 py-1 rounded-md w-max">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
-                                12.8%
-                            </span>
                             <span class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mt-1 uppercase tracking-wider">vs last month</span>
                         </div>
                     </div>

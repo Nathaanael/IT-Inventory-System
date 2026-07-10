@@ -40,25 +40,8 @@
                 </div>
             </div>
             
-            <!-- Search + Clock (right) -->
+            <!-- Clock + Fullscreen (right) -->
             <div class="flex items-center gap-4 flex-shrink-0">
-                <!-- Live Search -->
-                <!-- <form action="" class="flex w-full sm:w-auto" @submit.prevent>
-                    <div class="relative flex-1 sm:w-56">
-                        <input 
-                            type="text" 
-                            x-model="searchQuery"
-                            @input.debounce.500ms="liveSearch()"
-                            placeholder="Cari switch atau panel..." 
-                            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500"
-                        />
-                        <button type="submit" class="absolute right-3 top-2.5 text-gray-400 hover:text-brand-500">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </form> -->
                 <!-- Clock -->
                 <div class="text-right">
                     <div class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-wider" x-text="currentTime">--:--</div>
@@ -80,13 +63,11 @@
                 @php $hasSwitches = false; @endphp
                 @foreach($panels as $panel)
                     @foreach($panel->dataSwitches as $switch)
-                        @php 
-                            $hasSwitches = true; 
-                            $escapedNotes = htmlspecialchars($switch->notes ?? '', ENT_QUOTES, 'UTF-8');
-                        @endphp
+                        @php $hasSwitches = true; @endphp
                         <div 
-                            x-data="switchCard({{ $switch->id }}, '{{ addslashes($panel->name) }}', '{{ addslashes($switch->merk) }}', '{{ $switch->ip_address }}', '{{ $escapedNotes }}')"
+                            x-data="switchCard({{ $switch->id }}, {{ Js::from($panel->name) }}, {{ Js::from($switch->merk) }}, {{ Js::from($switch->ip_address) }}, {{ Js::from($switch->notes ?? '') }})"
                             @click="openDetails()"
+                            @status-update.window="updateStatus($event.detail)"
                             class="rounded-lg p-3 border transition-colors duration-300 cursor-pointer hover:brightness-110 shadow-sm"
                             :class="{
                                 'bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700': status === 'checking',
@@ -214,7 +195,8 @@
 @push('scripts')
 <script>
     document.addEventListener('alpine:init', () => {
-        // Individual switch card - handles its own ping
+        // Individual switch card — no longer pings on its own.
+        // Status is received from the parent switchMonitor via 'status-update' event.
         Alpine.data('switchCard', (id, panelName, merk, ip, notes) => ({
             id: id,
             panelName: panelName,
@@ -222,51 +204,12 @@
             ip: ip,
             notes: notes,
             status: 'checking',
-            pingInterval: null,
 
-            init() {
-                // Random delay (0-15 detik) untuk menyebar request secara acak
-                // Mencegah server Windows error 500 karena terlalu banyak spawn process exec() 'ping' bersamaan
-                const delay = Math.random() * 15000;
-                
-                setTimeout(() => {
-                    this.doPing();
-                    
-                    // Auto-ping setiap 30 detik (30000 ms) setelah delay pertama
-                    this.pingInterval = setInterval(() => {
-                        this.status = 'checking';
-                        this.doPing();
-                    }, 30000);
-                }, delay);
-            },
-
-            destroy() {
-                if (this.pingInterval) clearInterval(this.pingInterval);
-            },
-
-            async doPing() {
-                try {
-                    const response = await fetch(`/switchmonitoring/${this.id}/ping`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
-                    const result = await response.json();
-
-                    // Hanya string 'online' persis yang dianggap online.
-                    // Apa pun selain itu (undefined, null, string lain) -> offline.
-                    this.status = result.status === 'online' ? 'online' : 'offline';
-                } catch (e) {
-                    this.status = 'offline';
+            updateStatus(statuses) {
+                if (statuses && statuses[this.id] !== undefined) {
+                    // Only 'online' is treated as online; anything else → offline (fail-safe)
+                    this.status = statuses[this.id] === 'online' ? 'online' : 'offline';
                 }
-
-                this.$dispatch('ping-updated');
             },
             
             openDetails() {
@@ -280,39 +223,100 @@
             }
         }));
 
-        // Main monitor component - handles search, stats, clock
+        // Main monitor component — handles centralized status polling, stats, clock
         Alpine.data('switchMonitor', () => ({
             showModal: false,
             isFullscreen: false,
             selectedSwitch: { panelName: '', merk: '', ip: '', status: '', notes: '' },
             currentTime: '',
             currentDate: '',
-            searchQuery: '{{ request('search', '') }}',
             totalSwitches: {{ $totalSwitchesAll }},
             onlineCount: 0,
             offlineCount: 0,
             uptimePercentage: '0.0',
+            pollInterval: null,
             
             init() {
+                // Clock
                 this.updateTime();
                 setInterval(() => this.updateTime(), 1000);
 
-                // Listen for ping updates from child cards to recalculate stats
-                this.$el.addEventListener('ping-updated', () => this.calculateStats());
-                
-                // Listen for modal open event
+                // Listen for modal open event from child cards
                 this.$el.addEventListener('open-modal', (e) => {
                     this.selectedSwitch = e.detail;
                     this.showModal = true;
                 });
 
-                // Initial stats calculation after a short delay for pings to complete
-                setTimeout(() => this.calculateStats(), 5000);
+                // Centralized status polling — fetch all statuses at once
+                this.fetchAllStatuses();
+                this.pollInterval = setInterval(() => this.fetchAllStatuses(), 30000);
                 
                 // Watch for fullscreen changes (e.g., if user presses ESC key)
                 document.addEventListener('fullscreenchange', () => {
                     this.isFullscreen = !!document.fullscreenElement;
                 });
+            },
+
+            destroy() {
+                if (this.pollInterval) clearInterval(this.pollInterval);
+            },
+
+            async fetchAllStatuses() {
+                try {
+                    const response = await fetch('/switchmonitoring/status', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const statuses = await response.json();
+
+                    // Dispatch status data to all child switchCard components
+                    this.$dispatch('status-update', statuses);
+
+                    // Calculate stats directly from the response
+                    this.calculateStatsFromData(statuses);
+                } catch (e) {
+                    console.warn('Failed to fetch switch statuses:', e);
+                    // On failure, set all to offline (fail-safe)
+                    this.setAllOffline();
+                }
+            },
+
+            calculateStatsFromData(statuses) {
+                let online = 0;
+                let offline = 0;
+
+                for (const [id, status] of Object.entries(statuses)) {
+                    if (status === 'online') {
+                        online++;
+                    } else {
+                        offline++;
+                    }
+                }
+
+                this.onlineCount = online;
+                this.offlineCount = offline;
+
+                const total = online + offline;
+                if (total > 0) {
+                    this.uptimePercentage = ((online / total) * 100).toFixed(1);
+                } else {
+                    this.uptimePercentage = '0.0';
+                }
+            },
+
+            setAllOffline() {
+                // Dispatch empty object so cards default to offline
+                this.$dispatch('status-update', {});
+                this.onlineCount = 0;
+                this.offlineCount = this.totalSwitches;
+                this.uptimePercentage = '0.0';
             },
             
             toggleFullscreen() {
@@ -340,76 +344,6 @@
                 const now = new Date();
                 this.currentTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/:/g, '.');
                 this.currentDate = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            },
-
-            liveSearch() {
-                const url = new URL(window.location.href);
-                if (this.searchQuery) {
-                    url.searchParams.set('search', this.searchQuery);
-                } else {
-                    url.searchParams.delete('search');
-                }
-                url.searchParams.delete('page'); // Reset ke halaman 1
-
-                fetch(url.toString(), {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(res => res.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    const newContent = doc.getElementById('switchmonitor-content');
-                    const newPagination = doc.getElementById('switchmonitor-pagination');
-
-                    if (newContent) {
-                        document.getElementById('switchmonitor-content').innerHTML = newContent.innerHTML;
-                    }
-                    
-                    const paginationEl = document.getElementById('switchmonitor-pagination');
-                    if (newPagination) {
-                        if (paginationEl) {
-                            paginationEl.innerHTML = newPagination.innerHTML;
-                        } else {
-                            // Create pagination if it didn't exist
-                            const wrapper = document.querySelector('#switchmonitor-content').parentElement;
-                            const div = document.createElement('div');
-                            div.id = 'switchmonitor-pagination';
-                            div.className = 'px-6 py-4 border-t border-gray-200 dark:border-gray-700/60';
-                            div.innerHTML = newPagination.innerHTML;
-                            wrapper.appendChild(div);
-                        }
-                    } else if (paginationEl) {
-                        paginationEl.remove();
-                    }
-
-                    // Update browser URL without reload
-                    window.history.replaceState({}, '', url.toString());
-                });
-            },
-            
-            calculateStats() {
-                // Count all switchCard components on the page
-                const cards = this.$el.querySelectorAll('[x-data^="switchCard"]');
-                let online = 0;
-                let offline = 0;
-                let total = cards.length;
-                
-                cards.forEach(card => {
-                    const alpine = card._x_dataStack?.[0];
-                    if (alpine) {
-                        if (alpine.status === 'online') online++;
-                        if (alpine.status === 'offline') offline++;
-                    }
-                });
-                
-                this.onlineCount = online;
-                this.offlineCount = offline;
-                
-                const completed = online + offline;
-                if (completed > 0) {
-                    this.uptimePercentage = ((online / completed) * 100).toFixed(1);
-                }
             }
         }));
     });

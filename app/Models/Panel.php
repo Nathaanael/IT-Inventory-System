@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Panel extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['name', 'location'];
 
     public function dataSwitches()
     {

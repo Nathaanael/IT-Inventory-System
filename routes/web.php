@@ -84,7 +84,6 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     // ── Data Switch ──────────────────────────────────────
     Route::middleware(['role:IT Support,Super Admin'])->prefix('dataswitch')->name('dataswitch.')->group(function () {
         Route::get('/', [DataSwitchController::class, 'index'])->name('index');
-        Route::get('/{dataSwitch}/ping', [DataSwitchController::class, 'ping'])->name('ping');
         Route::post('/panel', [DataSwitchController::class, 'storePanel'])->name('storePanel');
         Route::post('/switch', [DataSwitchController::class, 'storeSwitch'])->name('storeSwitch');
         Route::put('/switch/{dataSwitch}', [DataSwitchController::class, 'updateSwitch'])->name('updateSwitch');
@@ -96,7 +95,8 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     // ── Switch Monitoring ────────────────────────────────
     Route::middleware(['role:IT Support,Super Admin'])->prefix('switchmonitoring')->name('switchmonitoring.')->group(function () {
         Route::get('/', [SwitchMonitoringController::class, 'index'])->name('index');
-        Route::get('/{dataSwitch}/ping', [SwitchMonitoringController::class, 'ping'])->name('ping');
+        Route::get('/status', [SwitchMonitoringController::class, 'status'])->name('status');
+        Route::get('/{id}/ping', [SwitchMonitoringController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

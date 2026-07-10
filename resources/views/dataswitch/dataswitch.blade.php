@@ -257,7 +257,7 @@
                         </td>
                         <td class="px-5 py-4 text-center">
                             <div class="flex items-center justify-center gap-3">
-                                <button @click="detailData = { merk: '{{ $switch->merk }}', ip: '{{ $switch->ip_address }}', status: pingStatus, panel: '{{ $panel->name }}', notes: {{ Js::from($switch->notes ?? '-') }} }; showDetailModal = true" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
+                                <button @click="detailData = { merk: {{ Js::from($switch->merk) }}, ip: {{ Js::from($switch->ip_address) }}, status: pingStatus, panel: {{ Js::from($panel->name) }}, notes: {{ Js::from($switch->notes ?? '-') }} }; showDetailModal = true" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </button>
                                 <button @click="$dispatch('open-edit-modal', { 
@@ -762,7 +762,7 @@
             
             checkPing() {
                 this.pingStatus = 'checking';
-                fetch(`/dataswitch/${switchId}/ping`)
+                fetch(`/switchmonitoring/${switchId}/ping`)
                     .then(response => response.json())
                     .then(data => {
                         this.pingStatus = data.status;

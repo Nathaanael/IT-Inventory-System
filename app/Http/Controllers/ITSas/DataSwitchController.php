@@ -23,13 +23,15 @@ class DataSwitchController extends Controller
         }]);
 
         if ($search) {
-            $query->where('name', 'like', "%{$search}%")
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
-                  ->orWhereHas('dataSwitches', function ($q) use ($search) {
-                      $q->where('merk', 'like', "%{$search}%")
-                        ->orWhere('ip_address', 'like', "%{$search}%")
-                        ->orWhere('notes', 'like', "%{$search}%");
+                  ->orWhereHas('dataSwitches', function ($sub) use ($search) {
+                      $sub->where('merk', 'like', "%{$search}%")
+                          ->orWhere('ip_address', 'like', "%{$search}%")
+                          ->orWhere('notes', 'like', "%{$search}%");
                   });
+            });
         }
 
         $panels = $query->paginate(5)->withQueryString();
@@ -46,54 +48,28 @@ class DataSwitchController extends Controller
 
     public function storePanel(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
         ]);
 
-        Panel::create($request->all());
+        Panel::create($validated);
 
         return redirect()->back()->with('success', 'Panel berhasil ditambahkan.');
     }
 
     public function storeSwitch(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'panel_id' => 'required|exists:panels,id',
             'merk' => 'required|string|max:255',
-            'ip_address' => 'required|string|unique:data_switches,ip_address|max:255',
+            'ip_address' => 'required|ip|unique:data_switches,ip_address|max:255',
             'notes' => 'nullable|string',
         ]);
 
-        DataSwitch::create($request->all());
+        DataSwitch::create($validated);
 
         return redirect()->back()->with('success', 'Switch berhasil ditambahkan.');
-    }
-
-    public function ping(DataSwitch $dataSwitch)
-    {
-        $ip = $dataSwitch->ip_address;
-        
-        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-        $command = $isWindows 
-            ? "ping -n 1 -w 1000 " . escapeshellarg($ip) 
-            : "ping -c 1 -W 1 " . escapeshellarg($ip);
-            
-        $output = [];
-        $result = -1;
-        exec($command, $output, $result);
-        
-        $outputStr = strtolower(implode(" ", $output));
-        $isOnline = false;
-        
-        if (strpos($outputStr, 'ttl=') !== false) {
-            $isOnline = true;
-        }
-        
-        return response()->json([
-            'status' => $isOnline ? 'online' : 'offline',
-            'ip' => $ip
-        ]);
     }
 
     public function destroySwitch(DataSwitch $dataSwitch)
@@ -104,26 +80,26 @@ class DataSwitchController extends Controller
 
     public function updateSwitch(Request $request, DataSwitch $dataSwitch)
     {
-        $request->validate([
+        $validated = $request->validate([
             'panel_id' => 'required|exists:panels,id',
             'merk' => 'required|string|max:255',
-            'ip_address' => 'required|string|max:255|unique:data_switches,ip_address,' . $dataSwitch->id,
+            'ip_address' => 'required|ip|max:255|unique:data_switches,ip_address,' . $dataSwitch->id,
             'notes' => 'nullable|string',
         ]);
 
-        $dataSwitch->update($request->all());
+        $dataSwitch->update($validated);
 
         return redirect()->back()->with('success', 'Data Switch berhasil diperbarui.');
     }
 
     public function updatePanel(Request $request, Panel $panel)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
         ]);
 
-        $panel->update($request->all());
+        $panel->update($validated);
 
         return redirect()->back()->with('success', 'Panel berhasil diperbarui.');
     }
@@ -131,7 +107,6 @@ class DataSwitchController extends Controller
     public function destroyPanel(Panel $panel)
     {
         // Delete all associated switches first, or cascade will handle it if configured
-        // Laravel's cascade is usually configured in the database, but let's be safe
         $panel->dataSwitches()->delete();
         $panel->delete();
 

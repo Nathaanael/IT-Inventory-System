@@ -48,6 +48,20 @@
         } finally {
             this.isSearching = false;
         }
+    },
+    async fetchAllStatuses() {
+        try {
+            const response = await fetch('/switchmonitoring/status');
+            const data = await response.json();
+            this.pingStats = data;
+            this.$dispatch('bulk-ping-update', data);
+        } catch(e) {
+            console.error('Failed to fetch ping statuses');
+        }
+    },
+    init() {
+        this.fetchAllStatuses();
+        setInterval(() => this.fetchAllStatuses(), 30000);
     }
 }" @ping-update.window="pingStats[$event.detail.id] = $event.detail.status" class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto relative">
     <!-- Stat Cards -->
@@ -753,25 +767,17 @@
             pingStatus: 'checking',
             
             init() {
-                // Stagger delay slightly to prevent all pings firing at the exact same millisecond
-                const delay = 200 + Math.random() * 1000;
-                setTimeout(() => {
-                    this.checkPing();
-                }, delay);
-            },
-            
-            checkPing() {
-                this.pingStatus = 'checking';
-                fetch(`/switchmonitoring/${switchId}/ping`)
-                    .then(response => response.json())
-                    .then(data => {
-                        this.pingStatus = data.status;
-                        this.$dispatch('ping-update', { id: switchId, status: data.status });
-                    })
-                    .catch(() => {
+                // Listen to the bulk update event fired by the parent component
+                window.addEventListener('bulk-ping-update', (e) => {
+                    const data = e.detail;
+                    if (data && data[switchId] !== undefined) {
+                        this.pingStatus = data[switchId];
+                        this.$dispatch('ping-update', { id: switchId, status: data[switchId] });
+                    } else {
                         this.pingStatus = 'offline';
                         this.$dispatch('ping-update', { id: switchId, status: 'offline' });
-                    });
+                    }
+                });
             }
         }));
     });

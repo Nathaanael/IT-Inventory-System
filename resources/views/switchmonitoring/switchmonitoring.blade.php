@@ -5,7 +5,9 @@
 <div class="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto" x-data="switchMonitor()">
 
     <!-- Main Content Wrapper -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+    <div id="fullscreen-container" 
+         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700/60 overflow-y-auto"
+         :class="{'rounded-none border-none fixed inset-0 z-[50] h-screen w-screen': isFullscreen}">
         
         <!-- Header + Stats Row -->
         <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4 border-b border-gray-200 dark:border-gray-700/60">
@@ -62,11 +64,16 @@
                     <div class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-wider" x-text="currentTime">--:--</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400" x-text="currentDate">-- --- ----</div>
                 </div>
+                
+                <!-- Fullscreen Toggle -->
+                <button @click="toggleFullscreen()" class="p-2 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ml-2" title="Toggle Fullscreen">
+                    <svg x-show="!isFullscreen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                    <svg x-show="isFullscreen" style="display: none;" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-4m0 0H5m4 0l-5 5m11-5v4m0-4h4m-4 0l5 5M9 4v4m0 0H5m4 0L4 3m11 5V4m0 4h4m-4 0l5-5"></path></svg>
+                </button>
             </div>
         </div>
 
         <!-- Panel Groups -->
-        <div id="switchmonitor-content" class="p-5 md:p-6 space-y-6">
         <div id="switchmonitor-content" class="p-5 md:p-6">
             <!-- Switch Cards Grid (Flattened) -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
@@ -114,22 +121,33 @@
                 </div>
             @endif
         </div>
-
-        <!-- Detail Modal -->
-        <div x-show="showModal" 
-             class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity"
-             x-transition.opacity
-             style="display: none;">
+    </div>
+    <!-- Detail Modal -->
+    <template x-teleport="body">
+        <div 
+            x-show="showModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            style="display: none;"
+        >
              
              <!-- Modal Content -->
-             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all"
+             <div 
+                  class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-gray-100 dark:border-gray-800"
                   @click.away="showModal = false"
-                  x-transition:enter="ease-out duration-300"
-                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                  x-transition:leave="ease-in duration-200"
-                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                  x-show="showModal"
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="opacity-0 scale-95"
+                  x-transition:enter-end="opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-150"
+                  x-transition:leave-start="opacity-100 scale-100"
+                  x-transition:leave-end="opacity-0 scale-95"
+             >
                  
                  <div class="p-6 border-b border-gray-100 dark:border-gray-700/60 flex justify-between items-center">
                      <h3 class="text-lg font-bold text-gray-900 dark:text-white">Detail Switch</h3>
@@ -181,7 +199,7 @@
                  </div>
              </div>
         </div>
-    </div>
+    </template>
 </div>
 
 @push('scripts')
@@ -242,6 +260,7 @@
         // Main monitor component - handles search, stats, clock
         Alpine.data('switchMonitor', () => ({
             showModal: false,
+            isFullscreen: false,
             selectedSwitch: { panelName: '', merk: '', ip: '', status: '', notes: '' },
             currentTime: '',
             currentDate: '',
@@ -266,6 +285,32 @@
 
                 // Initial stats calculation after a short delay for pings to complete
                 setTimeout(() => this.calculateStats(), 5000);
+                
+                // Watch for fullscreen changes (e.g., if user presses ESC key)
+                document.addEventListener('fullscreenchange', () => {
+                    this.isFullscreen = !!document.fullscreenElement;
+                });
+            },
+            
+            toggleFullscreen() {
+                const elem = document.getElementById('fullscreen-container');
+                if (!this.isFullscreen) {
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen();
+                    } else if (elem.webkitRequestFullscreen) { /* Safari */
+                        elem.webkitRequestFullscreen();
+                    } else if (elem.msRequestFullscreen) { /* IE11 */
+                        elem.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) { /* Safari */
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { /* IE11 */
+                        document.msExitFullscreen();
+                    }
+                }
             },
             
             updateTime() {

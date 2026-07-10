@@ -89,6 +89,7 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::post('/switch', [DataSwitchController::class, 'storeSwitch'])->name('storeSwitch');
         Route::put('/switch/{dataSwitch}', [DataSwitchController::class, 'updateSwitch'])->name('updateSwitch');
         Route::delete('/switch/{dataSwitch}', [DataSwitchController::class, 'destroySwitch'])->name('destroySwitch');
+        Route::put('/panel/{panel}', [DataSwitchController::class, 'updatePanel'])->name('updatePanel');
         Route::delete('/panel/{panel}', [DataSwitchController::class, 'destroyPanel'])->name('destroyPanel');
     });
 

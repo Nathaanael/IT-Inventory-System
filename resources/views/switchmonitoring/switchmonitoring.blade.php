@@ -94,13 +94,22 @@
                                 'bg-red-50 border-red-200 dark:bg-[#3a0f14] dark:border-[#5c1820]': status === 'offline'
                             }"
                         >
-                            <div class="text-xs font-semibold mb-1 truncate" 
-                                :class="{
-                                    'text-gray-600 dark:text-gray-400': status === 'checking',
-                                    'text-green-700 dark:text-green-500': status === 'online',
-                                    'text-red-700 dark:text-red-400': status === 'offline'
-                                }"
-                                x-text="panelName"></div>
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="text-xs font-semibold truncate pr-2" 
+                                    :class="{
+                                        'text-gray-600 dark:text-gray-400': status === 'checking',
+                                        'text-green-700 dark:text-green-500': status === 'online',
+                                        'text-red-700 dark:text-red-400': status === 'offline'
+                                    }"
+                                    x-text="panelName"></div>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                                    :class="{
+                                        'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300': status === 'checking',
+                                        'bg-green-200 text-green-800 dark:bg-green-900/60 dark:text-green-300': status === 'online',
+                                        'bg-red-200 text-red-800 dark:bg-red-900/60 dark:text-red-300': status === 'offline'
+                                    }"
+                                    x-text="status === 'online' ? 'ON' : (status === 'offline' ? 'OFF' : 'CHK')"></span>
+                            </div>
                             <div class="text-lg font-bold tracking-tight" 
                                 :class="{
                                     'text-gray-800 dark:text-gray-300': status === 'checking',

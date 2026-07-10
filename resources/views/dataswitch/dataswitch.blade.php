@@ -3,6 +3,9 @@
 @section('content')
 <div x-data="{ 
     showAddPanelModal: false, 
+    showEditPanelModal: false,
+    editPanelUrl: '',
+    editPanelData: { name: '', location: '' },
     showAddSwitchModal: false, 
     showEditSwitchModal: false, 
     editSwitchUrl: '', 
@@ -202,6 +205,9 @@
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $panel->dataSwitches->count() }} switch</span>
+                                    <button @click.stop="$dispatch('open-edit-panel-modal', { id: {{ $panel->id }}, name: {{ Js::from($panel->name) }}, location: {{ Js::from($panel->location ?? '') }} })" class="flex items-center justify-center rounded-md bg-white dark:bg-gray-800 px-2 py-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 transition-colors shadow-sm" title="Edit Panel">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </button>
                                     <button @click.stop="selectedPanelId = {{ $panel->id }}; showAddSwitchModal = true; $refs.addSwitchForm?.reset()" class="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                         Tambah Switch
@@ -349,6 +355,74 @@
                         </button>
                         <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 transition-colors shadow-theme-md">
                             Simpan Panel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <!-- Edit Panel Modal -->
+    <template x-teleport="body">
+        <div
+            x-show="showEditPanelModal"
+            @open-edit-panel-modal.window="
+                showEditPanelModal = true;
+                editPanelUrl = '{{ url('dataswitch/panel') }}/' + $event.detail.id;
+                editPanelData = {
+                    name: $event.detail.name,
+                    location: $event.detail.location
+                };
+            "
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            style="display: none;"
+        >
+            <div
+                @click.away="showEditPanelModal = false; $refs.editPanelForm.reset()"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800"
+            >
+                <div class="mb-5 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-full">
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Edit Panel</h3>
+                    </div>
+                    <button @click="showEditPanelModal = false; $refs.editPanelForm.reset()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form x-ref="editPanelForm" :action="editPanelUrl" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nama Panel <span class="text-red-500">*</span></label>
+                            <input type="text" name="name" x-model="editPanelData.name" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-colors" placeholder="e.g. Panel lantai 2 - produksi">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Lokasi</label>
+                            <input type="text" name="location" x-model="editPanelData.location" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-colors" placeholder="e.g. Gedung A, lantai 2">
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-end gap-3">
+                        <button type="button" @click="showEditPanelModal = false; $refs.editPanelForm.reset()" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" class="rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors shadow-theme-md">
+                            Update Panel
                         </button>
                     </div>
                 </form>

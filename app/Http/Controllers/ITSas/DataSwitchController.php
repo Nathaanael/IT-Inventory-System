@@ -116,6 +116,18 @@ class DataSwitchController extends Controller
         return redirect()->back()->with('success', 'Data Switch berhasil diperbarui.');
     }
 
+    public function updatePanel(Request $request, Panel $panel)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+        ]);
+
+        $panel->update($request->all());
+
+        return redirect()->back()->with('success', 'Panel berhasil diperbarui.');
+    }
+
     public function destroyPanel(Panel $panel)
     {
         // Delete all associated switches first, or cascade will handle it if configured

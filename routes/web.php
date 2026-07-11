@@ -75,6 +75,7 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::post('/{inventory}/reveal', [InventoryController::class, 'revealPassword'])->name('vault.reveal')->middleware('throttle:5,1');
         
         // Ping Endpoint
+        Route::post('/bulk-ping', [InventoryController::class, 'bulkPing'])->name('bulk-ping');
         Route::get('/{inventory}/ping', [InventoryController::class, 'ping'])->name('ping');
         
         // RDP Endpoint

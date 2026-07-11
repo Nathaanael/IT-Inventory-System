@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Process\Pool;
 
 class InventoryController extends Controller
 {
@@ -78,7 +80,7 @@ class InventoryController extends Controller
             'nama_user' => 'required|string|max:255',
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address',
-            'password_remote' => 'required|string',
+            'password_remote' => 'nullable|string',
             'id_karyawan' => 'nullable|numeric',
             'username_ad' => 'nullable|string|max:255',
             'nomor_asset_pc' => 'nullable|string|max:255',
@@ -94,7 +96,7 @@ class InventoryController extends Controller
             'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
             'department_id' => $validated['departemen'],
             'ip_address' => $validated['ip_address'],
-            'password_remote' => Crypt::encryptString($validated['password_remote']),
+            'password_remote' => !empty($validated['password_remote']) ? Crypt::encryptString($validated['password_remote']) : null,
             'notes' => $validated['notes'] ?? null,
             'created_by' => Auth::id(),
         ]);
@@ -121,7 +123,7 @@ class InventoryController extends Controller
         $departments = Department::all();
         // Decrypt password for editing
         try {
-            $inventory->password_remote = Crypt::decryptString($inventory->password_remote);
+            $inventory->password_remote = $inventory->password_remote ? Crypt::decryptString($inventory->password_remote) : '';
         } catch (DecryptException $e) {
             $inventory->password_remote = '';
         }
@@ -134,7 +136,7 @@ class InventoryController extends Controller
             'nama_user' => 'required|string|max:255',
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address,' . $inventory->id,
-            'password_remote' => 'required|string',
+            'password_remote' => 'nullable|string',
             'id_karyawan' => 'nullable|numeric',
             'username_ad' => 'nullable|string|max:255',
             'nomor_asset_pc' => 'nullable|string|max:255',
@@ -150,7 +152,7 @@ class InventoryController extends Controller
             'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
             'department_id' => $validated['departemen'],
             'ip_address' => $validated['ip_address'],
-            'password_remote' => Crypt::encryptString($validated['password_remote']),
+            'password_remote' => !empty($validated['password_remote']) ? Crypt::encryptString($validated['password_remote']) : null,
             'notes' => $validated['notes'] ?? null,
         ]);
         
@@ -221,6 +223,12 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         if (Hash::check($request->pin, $user->vault_pin)) {
+            if (empty($inventory->password_remote)) {
+                return response()->json([
+                    'success' => true,
+                    'password' => '-'
+                ]);
+            }
             try {
                 $password = Crypt::decryptString($inventory->password_remote);
             } catch (DecryptException $e) {
@@ -261,6 +269,46 @@ class InventoryController extends Controller
             'status' => $isOnline ? 'online' : 'offline',
             'ip' => $ip
         ]);
+    }
+
+    public function bulkPing(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer|exists:inventories,id'
+        ]);
+
+        $ids = $request->ids;
+        $inventories = Inventory::whereIn('id', $ids)->select('id', 'ip_address')->get();
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+
+        $poolResults = Process::pool(function (Pool $pool) use ($inventories, $isWindows) {
+            foreach ($inventories as $inv) {
+                $ip = trim($inv->ip_address ?? '');
+                if (empty($ip)) continue;
+                
+                $command = $isWindows
+                    ? "C:\\Windows\\System32\\ping.exe -n 1 -w 1000 " . escapeshellarg($ip)
+                    : "ping -c 1 -W 1 " . escapeshellarg($ip);
+                    
+                $pool->as("inv_{$inv->id}")->command($command);
+            }
+        })->start()->wait();
+
+        $statuses = [];
+        foreach ($inventories as $inv) {
+            $id = "inv_{$inv->id}";
+            $statuses[$inv->id] = 'offline';
+
+            if (isset($poolResults[$id])) {
+                $output = strtolower($poolResults[$id]->output());
+                if (strpos($output, 'ttl=') !== false) {
+                    $statuses[$inv->id] = 'online';
+                }
+            }
+        }
+
+        return response()->json($statuses);
     }
 
     public function downloadRdp(Inventory $inventory)

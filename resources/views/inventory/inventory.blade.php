@@ -154,13 +154,13 @@
                             </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-2">
-                                    <span class="relative flex h-3 w-3" :title="pingStatus === 'checking' ? 'Mengecek status...' : (pingStatus === 'online' ? 'Online' : 'Offline')">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75" x-show="pingStatus === 'checking'"></span>
+                                    <span class="relative flex h-3 w-3" :title="(pingStatuses[rowId] || 'checking') === 'checking' ? 'Mengecek status...' : (pingStatuses[rowId] === 'online' ? 'Online' : 'Offline')">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75" x-show="(pingStatuses[rowId] || 'checking') === 'checking'"></span>
                                         <span class="relative inline-flex rounded-full h-3 w-3 transition-colors duration-300"
                                             :class="{
-                                                'bg-gray-400': pingStatus === 'checking',
-                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': pingStatus === 'online',
-                                                'bg-red-500': pingStatus === 'offline'
+                                                'bg-gray-400': (pingStatuses[rowId] || 'checking') === 'checking',
+                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': pingStatuses[rowId] === 'online',
+                                                'bg-red-500': pingStatuses[rowId] === 'offline'
                                             }"></span>
                                     </span>
                                     <span>{{ $inventory->ip_address }}</span>
@@ -168,13 +168,17 @@
                             </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-3">
-                                    <span class="font-mono tracking-widest text-lg mt-1 leading-none" x-text="showPassword ? revealedPassword : '********'"></span>
-                                    <button @click="if(showPassword) { showPassword = false } else { $dispatch('open-auth-modal', { id: rowId }) }" class="text-gray-400 hover:text-brand-500 focus:outline-none transition-colors" title="Lihat Password">
-                                        <!-- Eye Icon -->
-                                        <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                        <!-- Eye Off Icon -->
-                                        <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
-                                    </button>
+                                    @if(empty($inventory->password_remote))
+                                        <span class="font-mono text-lg mt-1 leading-none">-</span>
+                                    @else
+                                        <span class="font-mono tracking-widest text-lg mt-1 leading-none" x-text="showPassword ? revealedPassword : '********'"></span>
+                                        <button @click="if(showPassword) { showPassword = false } else { $dispatch('open-auth-modal', { id: rowId }) }" class="text-gray-400 hover:text-brand-500 focus:outline-none transition-colors" title="Lihat Password">
+                                            <!-- Eye Icon -->
+                                            <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                            <!-- Eye Off Icon -->
+                                            <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-center">
@@ -461,27 +465,6 @@
                 rowId: id,
                 showPassword: false,
                 revealedPassword: '',
-                pingStatus: 'checking',
-
-                init() {
-                    // Stagger delay between 0.5s and 2.5s to prevent overwhelming the server on bulk load
-                    const delay = 500 + Math.random() * 2000;
-                    setTimeout(() => {
-                        this.checkPing();
-                    }, delay);
-                },
-
-                async checkPing() {
-                    try {
-                        const response = await fetch('{{ url('inventory') }}/' + this.rowId + '/ping', {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        const result = await response.json();
-                        this.pingStatus = result.status;
-                    } catch (error) {
-                        this.pingStatus = 'offline';
-                    }
-                }
             }
         }
 
@@ -507,6 +490,48 @@
                 deleteId: null,
                 deleteUrl: '',
                 isSearching: false,
+                pingStatuses: {},
+                
+                init() {
+                    this.$nextTick(() => {
+                        this.bulkCheckPing();
+                    });
+                },
+
+                async bulkCheckPing() {
+                    const rows = document.querySelectorAll('tr[x-data^="inventoryRow"]');
+                    const ids = Array.from(rows).map(row => {
+                        const match = row.getAttribute('x-data').match(/inventoryRow\((\d+)\)/);
+                        return match ? parseInt(match[1]) : null;
+                    }).filter(id => id !== null);
+
+                    if (ids.length === 0) return;
+
+                    ids.forEach(id => {
+                        this.pingStatuses[id] = 'checking';
+                    });
+
+                    try {
+                        const response = await fetch('{{ route('inventory.bulk-ping') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ ids: ids })
+                        });
+                        
+                        const result = await response.json();
+                        Object.assign(this.pingStatuses, result);
+                    } catch (error) {
+                        console.error('Bulk ping failed:', error);
+                        ids.forEach(id => {
+                            this.pingStatuses[id] = 'offline';
+                        });
+                    }
+                },
                 
                 async performSearch(form) {
                     this.isSearching = true;
@@ -537,6 +562,9 @@
                         if (newPagination) {
                             document.getElementById('inventory-pagination').innerHTML = newPagination.innerHTML;
                         }
+                        this.$nextTick(() => {
+                            this.bulkCheckPing();
+                        });
                     } catch (error) {
                         console.error('Search failed:', error);
                     } finally {

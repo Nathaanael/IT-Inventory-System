@@ -103,7 +103,7 @@
                     <label for="password_remote" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password Remote</label>
                     <div class="flex gap-2">
                         <div class="relative w-full shadow-sm rounded-lg">
-                            <input :type="showPassword ? 'text' : 'password'" id="password_remote" name="password_remote" x-model="password" placeholder="Masukkan password..." class="w-full rounded-lg border @error('password_remote') border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-brand-500 focus:ring-brand-500 @enderror bg-transparent pl-4 pr-11 py-3 text-sm text-gray-800 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 font-mono tracking-wider" required />
+                            <input :type="showPassword ? 'text' : 'password'" id="password_remote" name="password_remote" x-model="password" placeholder="Masukkan password..." class="w-full rounded-lg border @error('password_remote') border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-brand-500 focus:ring-brand-500 @enderror bg-transparent pl-4 pr-11 py-3 text-sm text-gray-800 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 font-mono tracking-wider" />
                             
                             <!-- Toggle Button -->
                             <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-brand-500 focus:outline-none transition-colors" title="Lihat/Sembunyikan">

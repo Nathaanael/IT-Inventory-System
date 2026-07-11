@@ -12,7 +12,7 @@ class DepartmentController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->query('per_page', 5);
+        $perPage = (int) $request->query('per_page', 5);
         if (!in_array($perPage, [5, 10, 20, 50, 100])) {
             $perPage = 5;
         }

@@ -45,6 +45,21 @@
                         </div>
                     @endif
                     
+                    @if(auth()->user()->password !== null)
+                    <!-- Current Password -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-medium text-gray-700">
+                                Current Password <span class="text-red-500">*</span>
+                            </label>
+                        </div>
+                        <div class="relative">
+                            <input type="password" name="current_password" placeholder="Enter current password" 
+                                class="w-full bg-[#f0f4ff] border border-transparent text-gray-700 text-sm rounded-full px-5 py-3 focus:outline-none focus:border-[#5b6ef6] focus:ring-2 focus:ring-[#5b6ef6]/20 transition-all placeholder:text-gray-400" required />
+                        </div>
+                    </div>
+                    @endif
+                    
                     <!-- New Password -->
                     <div>
                         <div class="flex justify-between items-center mb-1.5">

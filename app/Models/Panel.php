@@ -11,4 +11,5 @@ class Panel extends Model
     public function dataSwitches()
     {
         return $this->hasMany(DataSwitch::class);
-    }}
+    }
+}

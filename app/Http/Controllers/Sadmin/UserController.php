@@ -12,13 +12,13 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->query('per_page', 5);
+        $perPage = (int) $request->query('per_page', 5);
         if (!in_array($perPage, [5, 10, 20, 50, 100])) {
             $perPage = 5;
         }
 
-        // Mengecualikan pengguna yang sedang login dari daftar
-        $query = User::where('id', '!=', Auth::id());
+        // Menampilkan semua pengguna termasuk yang sedang login
+        $query = User::query();
 
         // Search functionality
         if ($request->has('search') && $request->search != '') {
@@ -117,5 +117,35 @@ class UserController extends Controller
         ]);
 
         return redirect()->route('master.users.index')->with('success', 'User berhasil dihapus.');
+    }
+
+    public function resetPassword(User $user)
+    {
+        $user->password = null;
+        $user->save();
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'update',
+            'description' => "mereset Password Login untuk akun: {$user->name}",
+            'ip_address' => request()->ip()
+        ]);
+
+        return redirect()->route('master.users.index')->with('success', 'Password Login berhasil direset. User dapat membuat password baru saat login kembali.');
+    }
+
+    public function resetPin(User $user)
+    {
+        $user->vault_pin = null;
+        $user->save();
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'update',
+            'description' => "mereset Vault PIN untuk akun: {$user->name}",
+            'ip_address' => request()->ip()
+        ]);
+
+        return redirect()->route('master.users.index')->with('success', 'Vault PIN berhasil direset. User dapat mengatur PIN baru dari menu Vault.');
     }
 }

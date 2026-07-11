@@ -243,6 +243,100 @@
         </div>
     </template>
 
+    <!-- Modal Reset Password -->
+    <template x-teleport="body">
+        <div 
+            x-show="showResetPasswordModal" 
+            @open-reset-password-modal.window="
+                showResetPasswordModal = true;
+                resetPasswordId = $event.detail.id;
+                resetPasswordName = $event.detail.name;
+                resetPasswordUrl = '{{ route('master.users.reset-password', 'REPLACE_ID') }}'.replace('REPLACE_ID', resetPasswordId);
+            "
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
+            x-transition.opacity 
+            style="display: none;"
+        >
+            <div 
+                class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
+                @click.away="showResetPasswordModal = false" 
+                x-show="showResetPasswordModal"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+            >
+                <div class="mb-5 flex items-center gap-3 text-orange-500">
+                    <div class="p-2 bg-orange-100 dark:bg-orange-500/20 rounded-full">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Reset Password Login</h3>
+                </div>
+                
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    Apakah Anda yakin ingin mereset <strong class="text-gray-800 dark:text-white">Password Login</strong> untuk user <strong x-text="resetPasswordName"></strong>?
+                </p>
+                <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                    Setelah direset, user tersebut akan menggunakan `Username AD` sebagai password sementara dan wajib membuat password baru saat login kembali.
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="showResetPasswordModal = false" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Batal</button>
+                    <form :action="resetPasswordUrl" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors shadow-theme-md">Ya, Reset Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Modal Reset PIN -->
+    <template x-teleport="body">
+        <div 
+            x-show="showResetPinModal" 
+            @open-reset-pin-modal.window="
+                showResetPinModal = true;
+                resetPinId = $event.detail.id;
+                resetPinName = $event.detail.name;
+                resetPinUrl = '{{ route('master.users.reset-pin', 'REPLACE_ID') }}'.replace('REPLACE_ID', resetPinId);
+            "
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
+            x-transition.opacity 
+            style="display: none;"
+        >
+            <div 
+                class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
+                @click.away="showResetPinModal = false" 
+                x-show="showResetPinModal"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+            >
+                <div class="mb-5 flex items-center gap-3 text-yellow-500">
+                    <div class="p-2 bg-yellow-100 dark:bg-yellow-500/20 rounded-full">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Reset Vault PIN</h3>
+                </div>
+                
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    Apakah Anda yakin ingin mereset <strong class="text-gray-800 dark:text-white">Vault PIN</strong> untuk user <strong x-text="resetPinName"></strong>?
+                </p>
+                <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                    Setelah direset, Vault PIN akan dikosongkan. User dapat membuat PIN baru yang aman melalui menu Vault.
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="showResetPinModal = false" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Batal</button>
+                    <form :action="resetPinUrl" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-yellow-600 transition-colors shadow-theme-md">Ya, Reset PIN</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </template>
+
 </div>
 
 @push('scripts')
@@ -255,10 +349,18 @@
             sortQuery: '{{ request("sort", "latest") }}',
             showFormModal: false,
             showDeleteModal: false,
+            showResetPasswordModal: false,
+            showResetPinModal: false,
             action: 'create',
             formAction: '',
             deleteUrl: '',
             deleteRole: '',
+            resetPasswordUrl: '',
+            resetPasswordId: null,
+            resetPasswordName: '',
+            resetPinUrl: '',
+            resetPinId: null,
+            resetPinName: '',
             formData: {
                 id: null,
                 id_karyawan: '',

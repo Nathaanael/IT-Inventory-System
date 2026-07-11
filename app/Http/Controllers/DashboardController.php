@@ -63,7 +63,10 @@ class DashboardController extends Controller
         }
 
         // 3. Recent Activities
-        $logPerPage = $request->get('log_per_page', 5);
+        $logPerPage = (int) $request->get('log_per_page', 5);
+        if (!in_array($logPerPage, [5, 10, 20, 50])) {
+            $logPerPage = 5;
+        }
         $logQuery = ActivityLog::with('user')->latest();
         $dateFilter($logQuery);
         $recentActivities = $logQuery->paginate($logPerPage)->withQueryString();

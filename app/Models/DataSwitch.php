@@ -11,4 +11,5 @@ class DataSwitch extends Model
     public function panel()
     {
         return $this->belongsTo(Panel::class);
-    }}
+    }
+}

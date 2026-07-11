@@ -18,8 +18,10 @@ class SwitchMonitoringController extends Controller
 
         $query = Panel::with(['dataSwitches' => function ($q) use ($search) {
             if ($search) {
-                $q->where('merk', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('merk', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%");
+                });
             }
         }]);
 

@@ -24,6 +24,7 @@ class LoginController extends Controller
                 // Cek apakah password yang dimasukkan sama dengan username_ad
                 if ($request->password === $user->username_ad) {
                     Auth::login($user);
+                    $request->session()->regenerate();
                     return redirect()->route('change_password')->with('warning', 'Silakan ganti password Anda untuk pertama kalinya.');
                 }
             } else {

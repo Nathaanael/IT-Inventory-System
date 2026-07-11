@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Inventory;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,7 +18,7 @@ class InventoryController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $perPage = $request->query('per_page', 5); // Default 5
+        $perPage = (int) $request->query('per_page', 5);
         $unit = $request->query('unit', 'Semua');
         
         $allowedPerPage = [5, 10, 20, 50];
@@ -113,13 +114,17 @@ class InventoryController extends Controller
     public function edit(Inventory $inventory)
     {
         // Check if vault is unlocked in session
-        if (!session('vault_unlocked') || session('vault_unlocked_expires_at') < now()) {
-            return redirect()->route('inventory.index')->with('error', 'Akses ditolak. Anda harus memasukkan Vault PIN terlebih dahulu.');
+        if (!session('vault_unlocked') || session('vault_unlocked_expires_at') < now() || auth()->user()->vault_pin === null) {
+            return redirect()->route('inventory.index')->with('error', 'Akses ditolak. Anda harus mengatur/memasukkan Vault PIN terlebih dahulu.');
         }
 
         $departments = Department::all();
-        // Decrypt password for editing (only if needed or just pass an indicator)
-        $inventory->password_remote = Crypt::decryptString($inventory->password_remote);
+        // Decrypt password for editing
+        try {
+            $inventory->password_remote = Crypt::decryptString($inventory->password_remote);
+        } catch (DecryptException $e) {
+            $inventory->password_remote = '';
+        }
         return view('inventory.edit', compact('inventory', 'departments'));
     }
 
@@ -177,6 +182,11 @@ class InventoryController extends Controller
 
     public function setPin(Request $request)
     {
+        $user = auth()->user();
+        if ($user->vault_pin !== null) {
+            return response()->json(['success' => false, 'message' => 'Vault PIN sudah diatur.']);
+        }
+
         $request->validate([
             'pin' => 'required|digits:6|confirmed'
         ], [
@@ -184,7 +194,6 @@ class InventoryController extends Controller
             'pin.confirmed' => 'Konfirmasi PIN tidak cocok.'
         ]);
 
-        $user = auth()->user();
         $user->vault_pin = Hash::make($request->pin);
         $user->save();
 
@@ -212,9 +221,14 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         if (Hash::check($request->pin, $user->vault_pin)) {
+            try {
+                $password = Crypt::decryptString($inventory->password_remote);
+            } catch (DecryptException $e) {
+                return response()->json(['success' => false, 'message' => 'Data password tidak dapat di-dekripsi.'], 500);
+            }
             return response()->json([
                 'success' => true,
-                'password' => Crypt::decryptString($inventory->password_remote)
+                'password' => $password
             ]);
         }
 

@@ -51,9 +51,9 @@ class MenuHelper
         $roleMenus = match ($role) {
             'Super Admin' => [
                 $dashboard,
-                $switchmonitoring,
                 $inventory,
                 $dataswitch,
+                $switchmonitoring,
                 [
                     'icon' => 'user-profile',
                     'name' => 'Master Data',

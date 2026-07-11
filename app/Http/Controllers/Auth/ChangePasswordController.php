@@ -11,12 +11,13 @@ class ChangePasswordController extends Controller
 {
     public function update(Request $request)
     {
-        $request->validate([
+        $user = auth()->user();
+        
+        $rules = [
             'password' => [
                 'required',
                 'min:8',
                 'confirmed', // expects password_confirmation field
-                // Custom rule for 2 of the 4 constraints: uppercase, lowercase, numbers, special characters
                 function ($attribute, $value, $fail) {
                     $hasUpper = preg_match('/[A-Z]/', $value);
                     $hasLower = preg_match('/[a-z]/', $value);
@@ -30,8 +31,14 @@ class ChangePasswordController extends Controller
                     }
                 }
             ],
-        ]);
+        ];
 
+        // Jika user sudah pernah set password (bukan first login), maka wajib input current_password
+        if ($user->password !== null) {
+            $rules['current_password'] = 'required|current_password';
+        }
+
+        $request->validate($rules);
         $user = auth()->user();
         $user->password = Hash::make($request->password);
         $user->save();

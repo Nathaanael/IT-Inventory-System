@@ -71,8 +71,8 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         
         // Vault Endpoints
         Route::post('/vault/set-pin', [InventoryController::class, 'setPin'])->name('vault.set-pin');
-        Route::post('/vault/verify-pin', [InventoryController::class, 'verifyPin'])->name('vault.verify-pin');
-        Route::post('/{inventory}/reveal', [InventoryController::class, 'revealPassword'])->name('vault.reveal');
+        Route::post('/vault/verify-pin', [InventoryController::class, 'verifyPin'])->name('vault.verify-pin')->middleware('throttle:5,1');
+        Route::post('/{inventory}/reveal', [InventoryController::class, 'revealPassword'])->name('vault.reveal')->middleware('throttle:5,1');
         
         // Ping Endpoint
         Route::get('/{inventory}/ping', [InventoryController::class, 'ping'])->name('ping');
@@ -114,6 +114,8 @@ Route::middleware(['auth', 'first_login'])->group(function () {
                 Route::get('/', [UserController::class, 'index'])->name('index');
                 Route::post('/', [UserController::class, 'store'])->name('store');
                 Route::put('/{user}', [UserController::class, 'update'])->name('update');
+                Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+                Route::post('/{user}/reset-pin', [UserController::class, 'resetPin'])->name('reset-pin');
                 Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
             });
             

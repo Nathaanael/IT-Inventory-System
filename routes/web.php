@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\ITSas\DataSwitchController;
 use App\Http\Controllers\ITSas\InventoryController;
 use App\Http\Controllers\ITSas\SwitchMonitoringController;
+use App\Http\Controllers\ITSas\TopologyDesignController;
 
 // Sadmin
 use App\Http\Controllers\Sadmin\UserController;
@@ -98,6 +99,12 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::get('/', [SwitchMonitoringController::class, 'index'])->name('index');
         Route::get('/status', [SwitchMonitoringController::class, 'status'])->name('status');
         Route::get('/{id}/ping', [SwitchMonitoringController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
+    });
+
+    // ── Topology Design ─────────────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('topologydesign')->name('topologydesign.')->group(function () {
+        Route::get('/', [TopologyDesignController::class, 'index'])->name('index');
+        Route::post('/save', [TopologyDesignController::class, 'save'])->name('save');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

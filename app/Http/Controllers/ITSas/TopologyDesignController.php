@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ITSas;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\ITSas\Topology;
 
 class TopologyDesignController extends Controller
 {
@@ -12,34 +13,21 @@ class TopologyDesignController extends Controller
      */
     public function index()
     {
-        $path = storage_path('app/topology.json');
+        $topology = Topology::first();
         
-        if (file_exists($path)) {
-            $data = json_decode(file_get_contents($path), true);
+        if ($topology) {
+            $data = $topology->data;
+            // Sinkronkan nama dan tanggal dengan field dari tabel
+            $data['name'] = $topology->name;
+            $data['date'] = $topology->date ? $topology->date->format('Y-m-d') : date('Y-m-d');
         } else {
             $data = [
                 'name' => 'Desain Topologi Baru',
                 'date' => date('Y-m-d'),
-                'servers' => [
-                    [ 'id' => 'server-1', 'name' => 'Server Pusat', 'ip' => '192.168.1.1', 'status' => 'online', 'x' => 400, 'y' => 50 ]
-                ],
-                'panels' => [
-                    [ 
-                        'id' => 'panel-1', 'name' => 'Panel Lantai 1', 'x' => 150, 'y' => 300, 'dragOver' => false,
-                        'switches' => [
-                            [ 'id' => 'sw-1', 'name' => 'Switch Utama', 'ip' => '192.168.1.10', 'merk' => 'Cisco', 'status' => 'online' ],
-                            [ 'id' => 'sw-2', 'name' => 'Switch Cadangan', 'ip' => '192.168.1.11', 'merk' => 'Mikrotik', 'status' => 'offline' ],
-                        ]
-                    ],
-                    [ 
-                        'id' => 'panel-2', 'name' => 'Panel Lantai 2', 'x' => 550, 'y' => 300, 'dragOver' => false,
-                        'switches' => [
-                            [ 'id' => 'sw-3', 'name' => 'Switch L2', 'ip' => '192.168.2.10', 'merk' => 'TP-Link', 'status' => 'online' ],
-                        ]
-                    ]
-                ],
+                'servers' => [],
+                'panels' => [],
                 'connections' => [],
-                'idCounter' => 10
+                'idCounter' => 1
             ];
         }
 
@@ -51,8 +39,16 @@ class TopologyDesignController extends Controller
 
     public function save(Request $request)
     {
-        $path = storage_path('app/topology.json');
-        file_put_contents($path, json_encode($request->all(), JSON_PRETTY_PRINT));
+        $topology = Topology::first();
+        if (!$topology) {
+            $topology = new Topology();
+        }
+        
+        $topology->name = $request->input('name', 'Desain Topologi Baru');
+        $topology->date = $request->input('date', date('Y-m-d'));
+        $topology->data = $request->all();
+        $topology->save();
+
         return response()->json(['success' => true]);
     }
 }

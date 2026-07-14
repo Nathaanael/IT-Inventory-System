@@ -105,6 +105,7 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     Route::middleware(['role:IT Support,Super Admin'])->prefix('topologydesign')->name('topologydesign.')->group(function () {
         Route::get('/', [TopologyDesignController::class, 'index'])->name('index');
         Route::post('/save', [TopologyDesignController::class, 'save'])->name('save');
+        Route::post('/live-ping', [TopologyDesignController::class, 'livePing'])->name('livePing');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

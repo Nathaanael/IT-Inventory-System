@@ -235,6 +235,7 @@
             offlineCount: 0,
             uptimePercentage: '0.0',
             pollInterval: null,
+            wakeLock: null,
             
             init() {
                 // Clock
@@ -252,8 +253,27 @@
                 this.pollInterval = setInterval(() => this.fetchAllStatuses(), 30000);
                 
                 // Watch for fullscreen changes (e.g., if user presses ESC key)
-                document.addEventListener('fullscreenchange', () => {
+                document.addEventListener('fullscreenchange', async () => {
                     this.isFullscreen = !!document.fullscreenElement;
+                    
+                    // Manage Screen Wake Lock to prevent PC from sleeping
+                    if (this.isFullscreen) {
+                        try {
+                            if ('wakeLock' in navigator) {
+                                this.wakeLock = await navigator.wakeLock.request('screen');
+                                console.log('Screen Wake Lock is active');
+                            }
+                        } catch (err) {
+                            console.error('Wake Lock error:', err);
+                        }
+                    } else {
+                        if (this.wakeLock !== null) {
+                            this.wakeLock.release().then(() => {
+                                this.wakeLock = null;
+                                console.log('Screen Wake Lock released');
+                            });
+                        }
+                    }
                 });
             },
 

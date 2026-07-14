@@ -80,6 +80,13 @@
                     <span>Hapus Semua</span>
                 </button> -->
 
+                <!-- Live Ping -->
+                <button @click="livePing()" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 shadow-sm shadow-blue-500/25 transition-colors" :disabled="isPinging" :class="isPinging ? 'opacity-70 cursor-not-allowed' : ''">
+                    <svg x-show="!isPinging" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <svg x-show="isPinging" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span x-text="isPinging ? 'Pinging...' : 'Live Ping'"></span>
+                </button>
+
                 <!-- Save (placeholder) -->
                 <button @click="saveTopology()" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm shadow-indigo-500/25 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -183,8 +190,8 @@
              @dragover.prevent="onCanvasDragOver($event)"
              @dragleave.self="isDraggingOver = false"
              @mousedown="onCanvasMouseDown($event)"
-             @mousemove="onCanvasMouseMove($event)"
-             @mouseup="onCanvasMouseUp($event)"
+             @mousemove.window="onCanvasMouseMove($event)"
+             @mouseup.window="onCanvasMouseUp($event)"
              @wheel.prevent="onCanvasWheel($event)">
 
             {{-- Grid Background --}}
@@ -507,7 +514,7 @@
                             </select>
                         </div>
                     </template>
-                    <template x-if="editModal.nodeType !== 'connection'">
+                    <template x-if="['server', 'switch'].includes(editModal.nodeType)">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">IP Address</label>
                             <input type="text" x-model="editModal.ip"
@@ -521,17 +528,6 @@
                             <input type="text" x-model="editModal.merk"
                                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                                    placeholder="Cisco, Mikrotik, dll...">
-                        </div>
-                    </template>
-                    <template x-if="editModal.nodeType !== 'connection'">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Status (Simulasi)</label>
-                            <select x-model="editModal.status"
-                                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                                <option value="unknown">Unknown</option>
-                                <option value="online">Online</option>
-                                <option value="offline">Offline</option>
-                            </select>
                         </div>
                     </template>
                 </div>
@@ -641,6 +637,7 @@ document.addEventListener('alpine:init', () => {
         
         // Counter for unique IDs
         idCounter: initialTopologyData.idCounter || 10,
+        isPinging: false,
 
         // Waypoints dragging state
         isDraggingWaypoint: false,
@@ -958,11 +955,19 @@ document.addEventListener('alpine:init', () => {
 
         onCanvasMouseUp(event) {
             this.isPanning = false;
+            
+            let didDrag = (this.draggingNode || this.isDraggingWaypoint);
+            
             this.draggingNode = null;
             this.draggingNodeType = null;
             this.isDraggingWaypoint = false;
             this.dragWaypointConnId = null;
             this.dragWaypointIndex = null;
+            
+            if (didDrag) {
+                // Auto-save posisinya jika tadi sedang men-drag
+                this.saveTopology(true);
+            }
         },
 
         onCanvasWheel(event) {
@@ -977,10 +982,15 @@ document.addEventListener('alpine:init', () => {
 
         // ── Selection ──
         selectNode(nodeId, nodeType) {
-            // We no longer finish connection on node click, only on anchor click.
-            this.selectedNode = nodeId;
-            this.selectedNodeType = nodeType;
-            this.selectedConnection = null;
+            if (this.selectedNode === nodeId && this.selectedNodeType === nodeType) {
+                // Toggle off if clicking the same node again
+                this.selectedNode = null;
+                this.selectedNodeType = null;
+            } else {
+                this.selectedNode = nodeId;
+                this.selectedNodeType = nodeType;
+                this.selectedConnection = null;
+            }
         },
 
         selectConnection(connId) {
@@ -1313,6 +1323,9 @@ document.addEventListener('alpine:init', () => {
 
             this.showEditModal = false;
             this.showToast('Data berhasil diperbarui!', 'success');
+            
+            // Auto-save ke database
+            this.saveTopology(true);
         },
 
         // ── Delete ──
@@ -1321,6 +1334,7 @@ document.addEventListener('alpine:init', () => {
                 this.connections = this.connections.filter(c => c.id !== this.selectedConnection);
                 this.selectedConnection = null;
                 this.showToast('Koneksi dihapus.', 'success');
+                this.saveTopology(true);
                 return;
             }
 
@@ -1341,6 +1355,9 @@ document.addEventListener('alpine:init', () => {
             this.selectedNode = null;
             this.selectedNodeType = null;
             this.showToast('Komponen dihapus.', 'success');
+            
+            // Auto-save
+            this.saveTopology(true);
         },
 
         clearAll() {
@@ -1355,10 +1372,13 @@ document.addEventListener('alpine:init', () => {
             this.selectedConnection = null;
             this.showClearAllModal = false;
             this.showToast('Semua komponen dihapus.', 'success');
+            
+            // Auto-save
+            this.saveTopology(true);
         },
 
         // ── Save / Load ──
-        async saveTopology() {
+        async saveTopology(isSilent = false) {
             const data = {
                 name: this.topologyName,
                 date: this.topologyDate,
@@ -1379,17 +1399,96 @@ document.addEventListener('alpine:init', () => {
                 });
                 
                 if (response.ok) {
-                    this.showToast('Topologi berhasil disimpan ke server!', 'success');
+                    if (!isSilent) {
+                        this.showToast('Topologi berhasil disimpan ke server!', 'success');
+                    }
                 } else {
-                    this.showToast('Gagal menyimpan topologi.', 'error');
+                    if (!isSilent) {
+                        this.showToast('Gagal menyimpan topologi.', 'error');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                if (!isSilent) {
+                    this.showToast('Gagal terhubung ke server.', 'error');
+                }
+            }
+        },
+
+        // ── Live Ping ──
+        async livePing() {
+            if (this.isPinging) return;
+            
+            // Gather all IPs
+            let ipsToPing = [];
+            
+            this.servers.forEach(s => {
+                if (s.ip) ipsToPing.push(s.ip);
+            });
+            
+            this.panels.forEach(p => {
+                if (p.switches) {
+                    p.switches.forEach(sw => {
+                        if (sw.ip) ipsToPing.push(sw.ip);
+                    });
+                }
+            });
+
+            if (ipsToPing.length === 0) {
+                this.showToast('Tidak ada IP untuk di-ping pada topologi ini.', 'info');
+                return;
+            }
+
+            this.isPinging = true;
+
+            try {
+                const response = await fetch('{{ route('topologydesign.livePing') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ ips: ipsToPing })
+                });
+
+                if (response.ok) {
+                    const statuses = await response.json();
+                    
+                    // Update servers
+                    this.servers.forEach(s => {
+                        if (s.ip && statuses[s.ip]) {
+                            s.status = statuses[s.ip];
+                        }
+                    });
+                    
+                    // Update switches in panels
+                    this.panels.forEach(p => {
+                        if (p.switches) {
+                            p.switches.forEach(sw => {
+                                if (sw.ip && statuses[sw.ip]) {
+                                    sw.status = statuses[sw.ip];
+                                }
+                            });
+                        }
+                    });
+
+                    this.showToast('Live Ping Selesai!', 'success');
+                } else if (response.status === 429) {
+                    const res = await response.json();
+                    this.showToast(res.error || 'Server sedang sibuk, silakan coba lagi.', 'error');
+                } else {
+                    this.showToast('Gagal melakukan Live Ping.', 'error');
                 }
             } catch (err) {
                 console.error(err);
                 this.showToast('Gagal terhubung ke server.', 'error');
+            } finally {
+                this.isPinging = false;
             }
         },
 
         // ── Helpers ──
+
         findNode(nodeId, nodeType) {
             if (nodeType === 'server') return this.servers.find(s => s.id === nodeId);
             if (nodeType === 'panel') return this.panels.find(p => p.id === nodeId);

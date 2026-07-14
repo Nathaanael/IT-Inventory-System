@@ -658,9 +658,22 @@ document.addEventListener('alpine:init', () => {
             });
 
             // Pantau perubahan agar kita tahu kapan state menjadi "kotor" (belum disave)
-            this.$watch('servers', () => { this.isDirty = true; }, { deep: true });
-            this.$watch('panels', () => { this.isDirty = true; }, { deep: true });
-            this.$watch('connections', () => { this.isDirty = true; }, { deep: true });
+            // Sekaligus memicu redraw canvas (drawConnections) jika ada perubahan property node (seperti status offline -> online)
+            this.$watch('servers', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
+            this.$watch('panels', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
+            this.$watch('connections', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
             this.$watch('topologyName', () => { this.isDirty = true; });
             this.$watch('topologyDate', () => { this.isDirty = true; });
         },

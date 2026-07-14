@@ -2,83 +2,100 @@
 
 @section('content')
 
-<div class="w-full" x-data="topologyDesigner()" x-init="init()" @keydown.delete.window="deleteSelected()" @keydown.escape.window="cancelConnection()">
+        <div id="topology-container" class="w-full bg-white dark:bg-gray-800" :class="isFullscreen ? 'fixed inset-0 z-[100] h-screen w-screen overflow-hidden rounded-none' : ''" x-data="topologyDesigner()" x-init="init()" @keydown.delete.window="if(isEditMode) deleteSelected()" @keydown.escape.window="cancelConnection()" @keydown.window.ctrl.z.prevent="if(isEditMode) undo()" @keydown.window.ctrl.y.prevent="if(isEditMode) undo()">
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- HEADER BAR --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
-    <div class="bg-white dark:bg-gray-800 rounded-t-2xl shadow-sm border border-b-0 border-gray-200 dark:border-gray-700/60">
-        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-3">
-            <!-- Title & Metadata -->
-            <div class="flex items-center gap-4 flex-shrink-0">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.25" stroke-width="1.5"/><circle cx="18" cy="6" r="2.25" stroke-width="1.5"/><circle cx="12" cy="12" r="2.25" stroke-width="1.5"/><circle cx="6" cy="18" r="2.25" stroke-width="1.5"/><circle cx="18" cy="18" r="2.25" stroke-width="1.5"/><path d="M7.6 7.6L10.4 10.4M13.6 10.4L16.4 7.6M10.4 13.6L7.6 16.4M13.6 13.6L16.4 16.4" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <!-- Empty State View -->
+            <div x-show="!hasTopologyData" class="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700/60 p-8 text-center" style="display: none;">
+                <div class="w-20 h-20 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6 text-indigo-500">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </div>
-                <div>
-                    <input type="text" x-model="topologyName" placeholder="Nama Topologi..."
-                           class="bg-transparent border-0 border-b border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-indigo-500 focus:ring-0 px-0 py-0 text-lg font-bold text-gray-900 dark:text-white placeholder-gray-400 transition-colors w-64">
-                    <div class="flex items-center mt-1">
-                        <input type="date" x-model="topologyDate" 
-                               class="bg-transparent border-0 border-b border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-indigo-500 focus:ring-0 px-0 py-0 text-xs text-gray-500 dark:text-gray-400 transition-colors w-32 cursor-pointer">
-                    </div>
-                </div>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Belum Ada Topologi</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">Anda belum membuat desain jaringan untuk topologi ini. Mulai tambahkan server, panel, dan switch sekarang juga.</p>
+                <button @click="hasTopologyData = true; isEditMode = true" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Tambah Topologi
+                </button>
             </div>
 
-            <!-- Toolbar Actions -->
-            <div class="flex items-center gap-2">
-                <!-- Zoom Controls -->
-                <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1">
-                    <button @click="zoomOut()" class="p-1.5 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom Out">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/></svg>
-                    </button>
-                    <span class="text-xs font-mono font-semibold text-gray-600 dark:text-gray-300 min-w-[40px] text-center" x-text="Math.round(zoom * 100) + '%'"></span>
-                    <button @click="zoomIn()" class="p-1.5 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom In">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
-                    </button>
-                    <!-- <button @click="resetZoom()" class="p-1.5 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Reset View">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                    </button> -->
-                </div>
+            <!-- Main View -->
+            <div x-show="hasTopologyData" style="display: none;">
 
-                <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+            {{-- ═══════════════════════════════════════════════════ --}}
+            {{-- HEADER BAR --}}
+            {{-- ═══════════════════════════════════════════════════ --}}
+            <div class="bg-white dark:bg-gray-800 rounded-t-2xl shadow-sm border border-b-0 border-gray-200 dark:border-gray-700/60">
+                <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-3">
+                    <!-- Title & Metadata -->
+                    <div class="flex items-center gap-4 flex-shrink-0">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.25" stroke-width="1.5"/><circle cx="18" cy="6" r="2.25" stroke-width="1.5"/><circle cx="12" cy="12" r="2.25" stroke-width="1.5"/><circle cx="6" cy="18" r="2.25" stroke-width="1.5"/><circle cx="18" cy="18" r="2.25" stroke-width="1.5"/><path d="M7.6 7.6L10.4 10.4M13.6 10.4L16.4 7.6M10.4 13.6L7.6 16.4M13.6 13.6L16.4 16.4" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                        <div>
+                            <input type="text" x-model="topologyName" placeholder="Nama Topologi..." :readonly="!isEditMode"
+                                   class="bg-transparent border-0 border-b border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-indigo-500 focus:ring-0 px-0 py-0 text-lg font-bold text-gray-900 dark:text-white placeholder-gray-400 transition-colors w-64">
+                            <div class="flex items-center mt-1">
+                                <input type="date" x-model="topologyDate" :readonly="!isEditMode"
+                                       class="bg-transparent border-0 border-b border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-indigo-500 focus:ring-0 px-0 py-0 text-xs text-gray-500 dark:text-gray-400 transition-colors w-32 cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- Connection Mode Toggle -->
-                <!-- <button @click="toggleConnectionMode()" 
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
-                    :class="connectionMode ? 'bg-indigo-500 text-white shadow-sm shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
-                    title="Mode Koneksi: Hubungkan perangkat">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                    <span x-text="connectionMode ? 'Connecting...' : 'Koneksi'"></span>
-                </button> -->
+                    <!-- Toolbar Actions -->
+                    <div class="flex items-center gap-2">
+                        <!-- Zoom Controls -->
+                        <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1">
+                            <button @click="zoomOut()" class="p-1.5 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom Out">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/></svg>
+                            </button>
+                            <span class="text-xs font-mono font-semibold text-gray-600 dark:text-gray-300 min-w-[40px] text-center" x-text="Math.round(zoom * 100) + '%'"></span>
+                            <button @click="zoomIn()" class="p-1.5 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom In">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                            </button>
+                        </div>
 
-                <!-- Add Waypoint Button (Only visible when connection selected) -->
-                <button x-show="selectedConnection" @click="addWaypointToSelected()" 
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                    title="Tambah Waypoint di tengah garis">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Tambah Waypoint</span>
-                </button>
+                        <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
 
-                <button x-show="selectedConnection" @click="openEditModal(selectedConnection, 'connection')" 
+                        <!-- Undo / Redo -->
+                        <div x-show="isEditMode" class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1 mr-2">
+                            <button @click="undo()" :disabled="history.length === 0" :class="history.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white'" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 transition-colors" title="Undo (Ctrl+Z)">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                            </button>
+                            <button @click="redo()" :disabled="redoStack.length === 0" :class="redoStack.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white'" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 transition-colors" title="Redo (Ctrl+Y)">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Add Waypoint Button -->
+                        <button x-show="isEditMode && selectedConnection" @click="addWaypointToSelected()" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                            title="Tambah Waypoint di tengah garis">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Tambah Waypoint</span>
+                        </button>
+
+                        <!-- Beri Label -->
+                <button x-show="isEditMode && selectedConnection" @click="openEditModal(selectedConnection, 'connection')" 
                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
                     title="Beri nama label pada garis">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
                     <span>Beri Label</span>
                 </button>
 
-                <!-- Clear All / Delete Selection -->
-                <button x-show="!selectedNode && !selectedConnection" @click="clearAll()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors" title="Hapus Semua">
+                <!-- Clear All -->
+                <button x-show="isEditMode && !selectedNode && !selectedConnection" @click="clearAll()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors" title="Hapus Semua">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     <span>Hapus Semua</span>
                 </button>
 
-                <button x-show="selectedConnection" @click="deleteSelectedConnection()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Hapus Garis">
+                <!-- Delete Selected -->
+                <button x-show="isEditMode && selectedConnection" @click="deleteSelectedConnection()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Hapus Garis">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     <span>Hapus Garis</span>
-                <!-- </button>
+                </button>
+                <button x-show="isEditMode && selectedNode" @click="deleteSelected()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Hapus Komponen">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    <span>Hapus Semua</span>
-                </button> -->
+                    <span>Hapus Komponen</span>
+                </button>
 
                 <!-- Live Ping -->
                 <button @click="livePing()" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 shadow-sm shadow-blue-500/25 transition-colors" :disabled="isPinging" :class="isPinging ? 'opacity-70 cursor-not-allowed' : ''">
@@ -87,10 +104,22 @@
                     <span x-text="isPinging ? 'Pinging...' : 'Live Ping'"></span>
                 </button>
 
-                <!-- Save (placeholder) -->
-                <button @click="saveTopology()" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm shadow-indigo-500/25 transition-colors">
+                <!-- Fullscreen -->
+                <button @click="toggleFullscreen()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Fullscreen">
+                    <svg x-show="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    <svg x-show="isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h4v4M4 14l5 5m11-5h-4v4m4-4l-5 5M4 10h4V6m-4 4l5-5m11 4h-4V6m4 4l-5-5"/></svg>
+                    <span x-text="isFullscreen ? 'Keluar' : 'Fullscreen'"></span>
+                </button>
+
+                <!-- Save/Edit Actions -->
+                <button x-show="!isEditMode" @click="isEditMode = true; selectedNode = null; selectedConnection = null;" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-500/25 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    <span>Edit Topologi</span>
+                </button>
+
+                <button x-show="isEditMode" @click="saveTopology(); isEditMode = false; selectedNode = null; selectedConnection = null;" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm shadow-indigo-500/25 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    <span>Simpan</span>
+                    <span>Simpan & Selesai</span>
                 </button>
             </div>
         </div>
@@ -99,10 +128,10 @@
     {{-- ═══════════════════════════════════════════════════ --}}
     {{-- MAIN WORKSPACE --}}
     {{-- ═══════════════════════════════════════════════════ --}}
-    <div class="flex border border-t-0 border-gray-200 dark:border-gray-700/60 rounded-b-2xl overflow-hidden" style="height: calc(100vh - 210px);">
+    <div class="flex border border-t-0 border-gray-200 dark:border-gray-700/60 rounded-b-2xl overflow-hidden" :style="isFullscreen ? 'height: calc(100vh - 76px);' : 'height: calc(100vh - 210px);'">
 
         {{-- ─── LEFT: Component Palette ─── --}}
-        <div class="w-56 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700/60 flex flex-col">
+        <div x-show="isEditMode" style="display: none;" class="w-56 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700/60 flex flex-col">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Komponen</h2>
             </div>
@@ -261,15 +290,15 @@
                                           :class="{
                                               'bg-green-500 shadow-sm shadow-green-500/50': server.status === 'online',
                                               'bg-red-500 shadow-sm shadow-red-500/50': server.status === 'offline',
-                                              'bg-gray-400': server.status === 'unknown'
+                                              'bg-gray-400': server.status === 'pending'
                                           }"></span>
                                     <span class="text-[10px] font-semibold uppercase"
                                           :class="{
                                               'text-green-600 dark:text-green-400': server.status === 'online',
                                               'text-red-600 dark:text-red-400': server.status === 'offline',
-                                              'text-gray-400': server.status === 'unknown'
+                                              'text-gray-400': server.status === 'pending'
                                           }"
-                                          x-text="server.status === 'online' ? 'Online' : (server.status === 'offline' ? 'Offline' : 'Unknown')"></span>
+                                          x-text="server.status === 'online' ? 'Online' : (server.status === 'offline' ? 'Offline' : 'Pending')"></span>
                                 </div>
                             </div>
                         </div>
@@ -581,6 +610,7 @@
             </div>
         </div>
     </template>
+    </div>
 </div>
 
 @push('scripts')
@@ -598,6 +628,8 @@ document.addEventListener('alpine:init', () => {
         isPanning: false,
         panStartX: 0,
         panStartY: 0,
+        hasTopologyData: (initialTopologyData.servers && initialTopologyData.servers.length > 0) || (initialTopologyData.panels && initialTopologyData.panels.length > 0),
+        isEditMode: false,
         
         // Nodes
         servers: initialTopologyData.servers || [],
@@ -639,26 +671,121 @@ document.addEventListener('alpine:init', () => {
         idCounter: initialTopologyData.idCounter || 10,
         isPinging: false,
         isDirty: false,
+        isFullscreen: false,
 
         // Waypoints dragging state
         isDraggingWaypoint: false,
         dragWaypointConnId: null,
         dragWaypointIndex: null,
 
+        // Undo / Redo
+        history: [],
+        redoStack: [],
+        isRestoringHistory: false,
+
+        // ── Undo / Redo ──
+        saveStateForUndo() {
+            if (this.isRestoringHistory) return;
+            this.history.push({
+                servers: JSON.parse(JSON.stringify(this.servers)),
+                panels: JSON.parse(JSON.stringify(this.panels)),
+                connections: JSON.parse(JSON.stringify(this.connections)),
+                idCounter: this.idCounter
+            });
+            if (this.history.length > 50) this.history.shift();
+            this.redoStack = [];
+        },
+
+        undo() {
+            if (this.history.length === 0) return;
+            this.isRestoringHistory = true;
+            
+            this.redoStack.push({
+                servers: JSON.parse(JSON.stringify(this.servers)),
+                panels: JSON.parse(JSON.stringify(this.panels)),
+                connections: JSON.parse(JSON.stringify(this.connections)),
+                idCounter: this.idCounter
+            });
+            
+            const prevState = this.history.pop();
+            this.servers = prevState.servers;
+            this.panels = prevState.panels;
+            this.connections = prevState.connections;
+            this.idCounter = prevState.idCounter;
+            
+            this.selectedNode = null;
+            this.selectedConnection = null;
+            
+            this.$nextTick(() => {
+                this.drawConnections();
+                this.isRestoringHistory = false;
+                this.isDirty = true;
+            });
+        },
+        
+        redo() {
+            if (this.redoStack.length === 0) return;
+            this.isRestoringHistory = true;
+            
+            this.history.push({
+                servers: JSON.parse(JSON.stringify(this.servers)),
+                panels: JSON.parse(JSON.stringify(this.panels)),
+                connections: JSON.parse(JSON.stringify(this.connections)),
+                idCounter: this.idCounter
+            });
+            
+            const nextState = this.redoStack.pop();
+            this.servers = nextState.servers;
+            this.panels = nextState.panels;
+            this.connections = nextState.connections;
+            this.idCounter = nextState.idCounter;
+            
+            this.selectedNode = null;
+            this.selectedConnection = null;
+            
+            this.$nextTick(() => {
+                this.drawConnections();
+                this.isRestoringHistory = false;
+                this.isDirty = true;
+            });
+        },
+
         // ── Init ──
         init() {
             // Data is already loaded from initialTopologyData
+
+            document.addEventListener('fullscreenchange', () => {
+                this.isFullscreen = !!document.fullscreenElement;
+                this.$nextTick(() => { this.drawConnections(); });
+            });
+
+            // Pastikan lines tergambar sempurna saat awal masuk halaman
+            setTimeout(() => {
+                this.drawConnections();
+            }, 300);
 
             // Peringatan sebelum refresh/tutup tab jika ada perubahan yang belum disimpan
             window.addEventListener('beforeunload', (e) => {
                 if (this.isDirty) {
                     e.preventDefault();
-                    e.returnValue = ''; // Memunculkan dialog konfirmasi standar browser
+                    e.returnValue = 'Ada perubahan yang belum disimpan. Yakin ingin keluar?'; 
+                }
+            });
+
+            // Cegah klik navigasi sidebar jika belum disimpan
+            document.body.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (link && this.isDirty) {
+                    if (!confirm('Anda memiliki perubahan yang belum disimpan! Yakin ingin meninggalkan halaman?')) {
+                        e.preventDefault();
+                    }
                 }
             });
 
             // Pantau perubahan agar kita tahu kapan state menjadi "kotor" (belum disave)
-            // Sekaligus memicu redraw canvas (drawConnections) jika ada perubahan property node (seperti status offline -> online)
+            this.$watch('topologyName', () => { this.isDirty = true; });
+            this.$watch('topologyDate', () => { this.isDirty = true; });
+            
             this.$watch('servers', () => { 
                 this.isDirty = true; 
                 this.$nextTick(() => this.drawConnections());
@@ -691,20 +818,25 @@ document.addEventListener('alpine:init', () => {
         },
 
         onCanvasDrop(event) {
+            if (!this.isEditMode) return;
             this.isDraggingOver = false;
-            const type = event.dataTransfer.getData('text/plain');
-            if (!type || type === 'switch-to-panel') return;
+            
+            const dragType = event.dataTransfer.getData('text/plain');
+            if (!dragType) return;
+            
+            this.saveStateForUndo();
+            if (dragType === 'switch-to-panel') return;
 
             const wrapper = document.getElementById('canvas-wrapper');
             const rect = wrapper.getBoundingClientRect();
             const x = (event.clientX - rect.left - this.panX) / this.zoom;
             const y = (event.clientY - rect.top - this.panY) / this.zoom;
 
-            if (type === 'server') {
+            if (dragType === 'server') {
                 this.addServer(x - 80, y - 30);
-            } else if (type === 'panel') {
+            } else if (dragType === 'panel') {
                 this.addPanel(x - 100, y - 30);
-            } else if (type === 'switch') {
+            } else if (dragType === 'switch') {
                 // Switch dropped on canvas (not on panel) — show toast 
                 this.showToast('Switch harus di-drop ke dalam Panel!', 'error');
             }
@@ -712,6 +844,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Add Nodes ──
         addServer(x, y) {
+            this.saveStateForUndo();
             const id = 'server-' + (this.idCounter++);
             this.servers.push({
                 id, name: 'Server Baru', ip: '', status: 'unknown', x, y
@@ -722,6 +855,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addPanel(x, y) {
+            this.saveStateForUndo();
             const id = 'panel-' + (this.idCounter++);
             this.panels.push({
                 id, name: 'Panel Baru', x, y, dragOver: false, switches: []
@@ -732,6 +866,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addSwitchToPanel(panelId) {
+            this.saveStateForUndo();
             const panel = this.panels.find(p => p.id === panelId);
             if (!panel) return;
             const id = 'sw-' + (this.idCounter++);
@@ -767,6 +902,9 @@ document.addEventListener('alpine:init', () => {
 
         // ── Node Dragging ──
         startDragNode(event, nodeId, nodeType) {
+            if (!this.isEditMode) return;
+            
+            this.saveStateForUndo();
             if (this.connectionMode) {
                 this.startConnection(event, nodeId, nodeType);
                 return;
@@ -794,11 +932,14 @@ document.addEventListener('alpine:init', () => {
 
         deleteSelectedConnection() {
             if (!this.selectedConnection) return;
+            this.saveStateForUndo();
             this.connections = this.connections.filter(c => c.id !== this.selectedConnection);
             this.selectedConnection = null;
         },
 
         startDragWaypoint(event, connId, index) {
+            if (!this.isEditMode) return;
+            this.saveStateForUndo();
             this.isDraggingWaypoint = true;
             this.dragWaypointConnId = connId;
             this.dragWaypointIndex = index;
@@ -807,6 +948,7 @@ document.addEventListener('alpine:init', () => {
         deleteWaypoint(connId, index) {
             const conn = this.connections.find(c => c.id === connId);
             if (conn && conn.waypoints) {
+                this.saveStateForUndo();
                 conn.waypoints.splice(index, 1);
             }
         },
@@ -815,6 +957,8 @@ document.addEventListener('alpine:init', () => {
             if (!this.selectedConnection) return;
             const conn = this.connections.find(c => c.id === this.selectedConnection);
             if (!conn) return;
+            
+            this.saveStateForUndo();
             if (!conn.waypoints) conn.waypoints = [];
             
             // If no waypoints, put it in the exact middle of start and end
@@ -994,14 +1138,25 @@ document.addEventListener('alpine:init', () => {
             this.dragWaypointIndex = null;
             
             if (didDrag) {
-                // Auto-save posisinya jika tadi sedang men-drag
-                this.saveTopology(true);
+                // Posisi diupdate, isDirty otomatis diset true oleh watcher
             }
         },
 
         onCanvasWheel(event) {
             const delta = event.deltaY > 0 ? -0.08 : 0.08;
             this.zoom = Math.max(0.3, Math.min(2.5, this.zoom + delta));
+        },
+
+        // ── Fullscreen ──
+        toggleFullscreen() {
+            const el = document.getElementById('topology-container');
+            if (!document.fullscreenElement) {
+                el.requestFullscreen().catch(err => {
+                    this.showToast('Browser tidak mendukung fullscreen untuk elemen ini', 'error');
+                });
+            } else {
+                document.exitFullscreen();
+            }
         },
 
         // ── Zoom ──
@@ -1037,6 +1192,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         handleAnchorClick(nodeId, nodeType, anchorPos) {
+            if (!this.isEditMode) return;
             if (this.isDrawingConnection) {
                 this.finishConnection(nodeId, nodeType, anchorPos);
             } else {
@@ -1068,6 +1224,7 @@ document.addEventListener('alpine:init', () => {
             );
 
             if (!exists) {
+                this.saveStateForUndo();
                 const id = 'conn-' + (this.idCounter++);
                 this.connections.push({
                     id,
@@ -1301,6 +1458,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Edit Modal ──
         openEditModal(nodeId, nodeType) {
+            if (!this.isEditMode) return;
             let node;
             if (nodeType === 'connection') {
                 node = this.connections.find(c => c.id === nodeId);
@@ -1333,6 +1491,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         saveEditModal() {
+            this.saveStateForUndo();
             if (this.editModal.nodeType === 'connection') {
                 const conn = this.connections.find(c => c.id === this.editModal.nodeId);
                 if (!conn) return;
@@ -1352,9 +1511,6 @@ document.addEventListener('alpine:init', () => {
 
             this.showEditModal = false;
             this.showToast('Data berhasil diperbarui!', 'success');
-            
-            // Auto-save ke database
-            this.saveTopology(true);
         },
 
         // ── Delete ──
@@ -1363,11 +1519,12 @@ document.addEventListener('alpine:init', () => {
                 this.connections = this.connections.filter(c => c.id !== this.selectedConnection);
                 this.selectedConnection = null;
                 this.showToast('Koneksi dihapus.', 'success');
-                this.saveTopology(true);
                 return;
             }
 
             if (!this.selectedNode) return;
+
+            this.saveStateForUndo();
 
             if (this.selectedNodeType === 'server') {
                 this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
@@ -1376,17 +1533,17 @@ document.addEventListener('alpine:init', () => {
                 this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
                 this.panels = this.panels.filter(p => p.id !== this.selectedNode);
             } else if (this.selectedNodeType === 'switch') {
-                for (let panel of this.panels) {
-                    panel.switches = panel.switches.filter(s => s.id !== this.selectedNode);
-                }
+                this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
+                // Safe way to update nested arrays in Alpine Proxy
+                this.panels = this.panels.map(panel => ({
+                    ...panel,
+                    switches: panel.switches.filter(s => s.id !== this.selectedNode)
+                }));
             }
 
             this.selectedNode = null;
             this.selectedNodeType = null;
             this.showToast('Komponen dihapus.', 'success');
-            
-            // Auto-save
-            this.saveTopology(true);
         },
 
         clearAll() {
@@ -1394,6 +1551,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         confirmClearAll() {
+            this.saveStateForUndo();
             this.servers = [];
             this.panels = [];
             this.connections = [];
@@ -1401,9 +1559,6 @@ document.addEventListener('alpine:init', () => {
             this.selectedConnection = null;
             this.showClearAllModal = false;
             this.showToast('Semua komponen dihapus.', 'success');
-            
-            // Auto-save
-            this.saveTopology(true);
         },
 
         // ── Save / Load ──

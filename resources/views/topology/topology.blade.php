@@ -638,6 +638,7 @@ document.addEventListener('alpine:init', () => {
         // Counter for unique IDs
         idCounter: initialTopologyData.idCounter || 10,
         isPinging: false,
+        isDirty: false,
 
         // Waypoints dragging state
         isDraggingWaypoint: false,
@@ -647,6 +648,21 @@ document.addEventListener('alpine:init', () => {
         // ── Init ──
         init() {
             // Data is already loaded from initialTopologyData
+
+            // Peringatan sebelum refresh/tutup tab jika ada perubahan yang belum disimpan
+            window.addEventListener('beforeunload', (e) => {
+                if (this.isDirty) {
+                    e.preventDefault();
+                    e.returnValue = ''; // Memunculkan dialog konfirmasi standar browser
+                }
+            });
+
+            // Pantau perubahan agar kita tahu kapan state menjadi "kotor" (belum disave)
+            this.$watch('servers', () => { this.isDirty = true; }, { deep: true });
+            this.$watch('panels', () => { this.isDirty = true; }, { deep: true });
+            this.$watch('connections', () => { this.isDirty = true; }, { deep: true });
+            this.$watch('topologyName', () => { this.isDirty = true; });
+            this.$watch('topologyDate', () => { this.isDirty = true; });
         },
 
         // ── Palette Drag ──
@@ -1399,6 +1415,7 @@ document.addEventListener('alpine:init', () => {
                 });
                 
                 if (response.ok) {
+                    this.isDirty = false; // Reset status dirty
                     if (!isSilent) {
                         this.showToast('Topologi berhasil disimpan ke server!', 'success');
                     }

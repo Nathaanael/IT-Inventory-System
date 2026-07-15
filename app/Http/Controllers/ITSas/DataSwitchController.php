@@ -114,4 +114,31 @@ class DataSwitchController extends Controller
 
         return redirect()->back()->with('success', 'Panel beserta Switch di dalamnya berhasil dihapus.');
     }
+
+    public function ping($id)
+    {
+        $switch = DataSwitch::findOrFail($id);
+        $ip = $switch->ip_address;
+        
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $command = $isWindows 
+            ? "ping -n 1 -w 1000 " . escapeshellarg($ip) 
+            : "ping -c 1 -W 1 " . escapeshellarg($ip);
+            
+        $output = [];
+        $result = -1;
+        exec($command, $output, $result);
+        
+        $outputStr = strtolower(implode(" ", $output));
+        $isOnline = false;
+        
+        if (strpos($outputStr, 'ttl=') !== false) {
+            $isOnline = true;
+        }
+        
+        return response()->json([
+            'status' => $isOnline ? 'online' : 'offline',
+            'ip' => $ip
+        ]);
+    }
 }

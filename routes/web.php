@@ -90,6 +90,8 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::delete('/switch/{dataSwitch}', [DataSwitchController::class, 'destroySwitch'])->name('destroySwitch');
         Route::put('/panel/{panel}', [DataSwitchController::class, 'updatePanel'])->name('updatePanel');
         Route::delete('/panel/{panel}', [DataSwitchController::class, 'destroyPanel'])->name('destroyPanel');
+        
+        Route::get('/switch/{id}/ping', [DataSwitchController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
     });
 
     // ── Switch Monitoring ────────────────────────────────

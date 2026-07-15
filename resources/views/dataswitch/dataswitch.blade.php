@@ -257,20 +257,24 @@
                         </td>
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-2">
-                                <span class="relative flex h-3 w-3" :title="pingStatus === 'checking' ? 'Mengecek status...' : (pingStatus === 'online' ? 'Online' : 'Offline')">
+                                <span class="relative flex h-3 w-3" :title="(pingStatus === 'unknown' || pingStatus === 'checking') ? 'Mengecek status...' : (pingStatus === 'online' ? 'Online' : 'Offline')">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75" x-show="pingStatus === 'checking'"></span>
                                     <span class="relative inline-flex rounded-full h-3 w-3 transition-colors duration-300"
                                         :class="{
+                                            'bg-gray-300 dark:bg-gray-600': pingStatus === 'unknown',
                                             'bg-gray-400': pingStatus === 'checking',
                                             'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': pingStatus === 'online',
                                             'bg-red-500': pingStatus === 'offline'
                                         }"></span>
                                 </span>
-                                <span class="text-sm font-bold text-gray-900 dark:text-white" x-text="pingStatus === 'checking' ? 'Mengecek...' : (pingStatus === 'online' ? 'Online' : 'Offline')"></span>
+                                <span class="text-sm font-bold text-gray-900 dark:text-white" x-text="pingStatus === 'checking' ? 'Mengecek...' : (pingStatus === 'online' ? 'Online' : (pingStatus === 'offline' ? 'Offline' : 'Belum dicek'))"></span>
                             </div>
                         </td>
                         <td class="px-5 py-4 text-center">
                             <div class="flex items-center justify-center gap-3">
+                                <button @click="checkPing()" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP" :disabled="pingStatus === 'checking'" :class="{ 'opacity-50 cursor-not-allowed': pingStatus === 'checking' }">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                </button>
                                 <button @click="detailData = { merk: {{ Js::from($switch->merk) }}, ip: {{ Js::from($switch->ip_address) }}, status: pingStatus, panel: {{ Js::from($panel->name) }}, notes: {{ Js::from($switch->notes ?? '-') }} }; showDetailModal = true" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </button>
@@ -764,20 +768,44 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('switchRow', (switchId) => ({
-            pingStatus: 'checking',
+            pingStatus: 'unknown',
             
             init() {
                 // Listen to the bulk update event fired by the parent component
-                window.addEventListener('bulk-ping-update', (e) => {
-                    const data = e.detail;
-                    if (data && data[switchId] !== undefined) {
-                        this.pingStatus = data[switchId];
-                        this.$dispatch('ping-update', { id: switchId, status: data[switchId] });
-                    } else {
-                        this.pingStatus = 'offline';
-                        this.$dispatch('ping-update', { id: switchId, status: 'offline' });
+                // === DIBUAT COMMENT AGAR TIDAK OTOMATIS PING ===
+                // window.addEventListener('bulk-ping-update', (e) => {
+                //     const data = e.detail;
+                //     if (data && data[switchId] !== undefined) {
+                //         this.pingStatus = data[switchId];
+                //         this.$dispatch('ping-update', { id: switchId, status: data[switchId] });
+                //     } else {
+                //         this.pingStatus = 'offline';
+                //         this.$dispatch('ping-update', { id: switchId, status: 'offline' });
+                //     }
+                // });
+            },
+
+            async checkPing() {
+                this.pingStatus = 'checking';
+                try {
+                    const response = await fetch('/dataswitch/switch/' + switchId + '/ping', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (response.status === 429) {
+                        alert('Terlalu banyak permintaan ping. Silakan tunggu beberapa saat.');
+                        this.pingStatus = 'unknown';
+                        return;
                     }
-                });
+                    if (!response.ok) throw new Error('Network error');
+                    const result = await response.json();
+                    this.pingStatus = result.status;
+                } catch (error) {
+                    console.error('Ping failed:', error);
+                    this.pingStatus = 'offline';
+                }
             }
         }));
     });

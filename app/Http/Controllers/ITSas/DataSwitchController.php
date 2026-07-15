@@ -22,6 +22,7 @@ class DataSwitchController extends Controller
                         ->orWhere('notes', 'like', "%{$search}%");
                 });
             }
+            $q->orderBy('id', 'desc');
         }]);
 
         if ($search) {
@@ -36,7 +37,7 @@ class DataSwitchController extends Controller
             });
         }
 
-        $panels = $query->paginate(5)->withQueryString();
+        $panels = $query->orderBy('id', 'desc')->paginate(5)->withQueryString();
         $totalPanels = Panel::count();
         $totalSwitches = DataSwitch::count();
         

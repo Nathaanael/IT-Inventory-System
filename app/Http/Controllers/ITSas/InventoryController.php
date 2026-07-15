@@ -49,9 +49,9 @@ class InventoryController extends Controller
         }
 
         if ($sort === 'oldest') {
-            $query->oldest();
+            $query->orderBy('id', 'asc');
         } else {
-            $query->latest();
+            $query->orderBy('id', 'desc');
         }
 
         $inventories = $query->paginate($perPage)->withQueryString();

@@ -120,20 +120,20 @@
             </div>
 
             <!-- Table Data -->
-            <div id="inventory-table-container" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 relative">
+            <div id="inventory-table-container" class="overflow-x-auto overflow-y-auto max-h-[65vh] rounded-lg border border-gray-200 dark:border-gray-800 relative shadow-inner">
                 <table class="w-full table-auto">
-                    <thead class="bg-gray-50 text-left dark:bg-gray-800/50">
+                    <thead class="text-left">
                         <tr>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">No</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Nama User</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Computer Name</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">ID Karyawan</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">User AD</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">No. Asset</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Departemen</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">IP Address</th>
-                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Password Remote</th>
-                            <th class="px-5 py-3 text-center text-sm font-semibold text-gray-800 dark:text-white/90">Aksi</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">No</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">Nama User</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">Computer Name</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">ID Karyawan</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">User AD</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">No. Asset</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">Departemen</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">IP Address</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">Password Remote</th>
+                            <th class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-white/90 shadow-[0_1px_0_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_0_rgba(31,41,55,1)]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">

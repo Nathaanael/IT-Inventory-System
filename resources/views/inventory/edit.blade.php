@@ -84,6 +84,12 @@
                     <input type="text" id="nomor_asset_pc" name="nomor_asset_pc" value="{{ old('nomor_asset_pc', $inventory->nomor_asset_pc ?? '') }}" placeholder="Contoh: PC-IT-001" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" />
                 </div>
 
+                <!-- Computer Name -->
+                <div>
+                    <label for="computer_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Computer Name</label>
+                    <input type="text" id="computer_name" name="computer_name" value="{{ old('computer_name', $inventory->computer_name ?? '') }}" placeholder="Contoh: DESKTOP-ABC123" class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 dark:border-gray-700 dark:text-white/90 shadow-sm" />
+                </div>
+
                 <!-- IP Address -->
                 <div>
                     <label for="ip_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">IP Address</label>

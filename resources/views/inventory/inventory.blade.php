@@ -125,6 +125,7 @@
                     <thead class="bg-gray-50 text-left dark:bg-gray-800/50">
                         <tr>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">No</th>
+                            <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Nama User</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">Computer Name</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">ID Karyawan</th>
                             <th class="px-5 py-3 text-sm font-semibold text-gray-800 dark:text-white/90">User AD</th>
@@ -140,6 +141,7 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/20" x-data="inventoryRow({{ $inventory->id }})" @password-verified.window="if($event.detail.id === rowId) { showPassword = true; revealedPassword = $event.detail.password; }">
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventories->firstItem() + $index }}</td>
                             <td class="px-5 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{{ $inventory->nama_user }}</td>
+                            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->computer_name ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->id_karyawan ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->username_ad ?? '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $inventory->nomor_asset_pc ?? '-' }}</td>
@@ -154,13 +156,14 @@
                             </td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-2">
-                                    <span class="relative flex h-3 w-3" :title="(pingStatuses[rowId] || 'checking') === 'checking' ? 'Mengecek status...' : (pingStatuses[rowId] === 'online' ? 'Online' : 'Offline')">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75" x-show="(pingStatuses[rowId] || 'checking') === 'checking'"></span>
+                                    <span class="relative flex h-3 w-3" :title="(pingStatuses[rowId] || 'unknown') === 'checking' ? 'Mengecek status...' : ((pingStatuses[rowId] || 'unknown') === 'online' ? 'Online' : ((pingStatuses[rowId] || 'unknown') === 'offline' ? 'Offline' : 'Belum dicek'))">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" x-show="(pingStatuses[rowId] || 'unknown') === 'checking'"></span>
                                         <span class="relative inline-flex rounded-full h-3 w-3 transition-colors duration-300"
                                             :class="{
-                                                'bg-gray-400': (pingStatuses[rowId] || 'checking') === 'checking',
-                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': pingStatuses[rowId] === 'online',
-                                                'bg-red-500': pingStatuses[rowId] === 'offline'
+                                                'bg-gray-300 dark:bg-gray-600': (pingStatuses[rowId] || 'unknown') === 'unknown',
+                                                'bg-blue-400': (pingStatuses[rowId] || 'unknown') === 'checking',
+                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': (pingStatuses[rowId] || 'unknown') === 'online',
+                                                'bg-red-500': (pingStatuses[rowId] || 'unknown') === 'offline'
                                             }"></span>
                                     </span>
                                     <span>{{ $inventory->ip_address }}</span>
@@ -193,6 +196,9 @@
                                         notes: {{ Js::from($inventory->notes ?? '-') }}
                                     })" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
+                                    <button @click="checkPing(rowId)" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP" :disabled="pingStatuses[rowId] === 'checking'" :class="{ 'opacity-50 cursor-not-allowed': pingStatuses[rowId] === 'checking' }">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                     </button>
                                     <a href="{{ route('inventory.rdp', $inventory->id) }}" class="text-green-500 hover:text-green-700 transition-colors" title="Download RDP (One-Click Remote)" target="_blank">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -493,43 +499,34 @@
                 pingStatuses: {},
                 
                 init() {
-                    this.$nextTick(() => {
-                        this.bulkCheckPing();
-                    });
+                    // Auto-ping is disabled to reduce server load
                 },
 
-                async bulkCheckPing() {
-                    const rows = document.querySelectorAll('tr[x-data^="inventoryRow"]');
-                    const ids = Array.from(rows).map(row => {
-                        const match = row.getAttribute('x-data').match(/inventoryRow\((\d+)\)/);
-                        return match ? parseInt(match[1]) : null;
-                    }).filter(id => id !== null);
-
-                    if (ids.length === 0) return;
-
-                    ids.forEach(id => {
-                        this.pingStatuses[id] = 'checking';
-                    });
-
+                async checkPing(id) {
+                    this.pingStatuses[id] = 'checking';
+                    
                     try {
-                        const response = await fetch('{{ route('inventory.bulk-ping') }}', {
-                            method: 'POST',
+                        const response = await fetch('{{ url('inventory') }}/' + id + '/ping', {
+                            method: 'GET',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ ids: ids })
+                            }
                         });
                         
+                        if (response.status === 429) {
+                            alert('Terlalu banyak permintaan ping. Silakan tunggu beberapa saat.');
+                            this.pingStatuses[id] = 'unknown';
+                            return;
+                        }
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        
                         const result = await response.json();
-                        Object.assign(this.pingStatuses, result);
+                        this.pingStatuses[id] = result.status; // 'online' or 'offline'
                     } catch (error) {
-                        console.error('Bulk ping failed:', error);
-                        ids.forEach(id => {
-                            this.pingStatuses[id] = 'offline';
-                        });
+                        console.error('Ping failed:', error);
+                        this.pingStatuses[id] = 'offline';
                     }
                 },
                 
@@ -562,9 +559,6 @@
                         if (newPagination) {
                             document.getElementById('inventory-pagination').innerHTML = newPagination.innerHTML;
                         }
-                        this.$nextTick(() => {
-                            this.bulkCheckPing();
-                        });
                     } catch (error) {
                         console.error('Search failed:', error);
                     } finally {

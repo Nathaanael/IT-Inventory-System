@@ -8,6 +8,7 @@ class Inventory extends Model
 {
     protected $fillable = [
         'nama_user',
+        'computer_name',
         'id_karyawan',
         'username_ad',
         'nomor_asset_pc',

@@ -78,6 +78,7 @@ class InventoryController extends Controller
     {
         $validated = $request->validate([
             'nama_user' => 'required|string|max:255',
+            'computer_name' => 'nullable|string|max:255',
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address',
             'password_remote' => 'nullable|string',
@@ -91,6 +92,7 @@ class InventoryController extends Controller
 
         $inventory = Inventory::create([
             'nama_user' => $validated['nama_user'],
+            'computer_name' => $validated['computer_name'] ?? null,
             'id_karyawan' => $validated['id_karyawan'] ?? null,
             'username_ad' => $validated['username_ad'] ?? null,
             'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
@@ -134,6 +136,7 @@ class InventoryController extends Controller
     {
         $validated = $request->validate([
             'nama_user' => 'required|string|max:255',
+            'computer_name' => 'nullable|string|max:255',
             'departemen' => 'required|exists:departments,id',
             'ip_address' => 'required|ip|unique:inventories,ip_address,' . $inventory->id,
             'password_remote' => 'nullable|string',
@@ -147,6 +150,7 @@ class InventoryController extends Controller
 
         $inventory->update([
             'nama_user' => $validated['nama_user'],
+            'computer_name' => $validated['computer_name'] ?? null,
             'id_karyawan' => $validated['id_karyawan'] ?? null,
             'username_ad' => $validated['username_ad'] ?? null,
             'nomor_asset_pc' => $validated['nomor_asset_pc'] ?? null,
@@ -271,45 +275,7 @@ class InventoryController extends Controller
         ]);
     }
 
-    public function bulkPing(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'integer|exists:inventories,id'
-        ]);
 
-        $ids = $request->ids;
-        $inventories = Inventory::whereIn('id', $ids)->select('id', 'ip_address')->get();
-        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-
-        $poolResults = Process::pool(function (Pool $pool) use ($inventories, $isWindows) {
-            foreach ($inventories as $inv) {
-                $ip = trim($inv->ip_address ?? '');
-                if (empty($ip)) continue;
-                
-                $command = $isWindows
-                    ? "C:\\Windows\\System32\\ping.exe -n 1 -w 1000 " . escapeshellarg($ip)
-                    : "ping -c 1 -W 1 " . escapeshellarg($ip);
-                    
-                $pool->as("inv_{$inv->id}")->command($command);
-            }
-        })->start()->wait();
-
-        $statuses = [];
-        foreach ($inventories as $inv) {
-            $id = "inv_{$inv->id}";
-            $statuses[$inv->id] = 'offline';
-
-            if (isset($poolResults[$id])) {
-                $output = strtolower($poolResults[$id]->output());
-                if (strpos($output, 'ttl=') !== false) {
-                    $statuses[$inv->id] = 'online';
-                }
-            }
-        }
-
-        return response()->json($statuses);
-    }
 
     public function downloadRdp(Inventory $inventory)
     {

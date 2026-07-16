@@ -8,6 +8,11 @@
 
     <title>{{ $title ?? 'Dashboard' }}</title>
 
+    <!-- PWA Config -->
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo/logo-icon.svg') }}">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -134,5 +139,19 @@
 </body>
 
 @stack('scripts')
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
+</script>
 
 </html>

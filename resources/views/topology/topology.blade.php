@@ -1305,9 +1305,19 @@ document.addEventListener('alpine:init', () => {
                 const from = this.getExactAnchorPoint(conn.fromId, conn.fromType, conn.fromAnchor);
                 const to = this.getExactAnchorPoint(conn.toId, conn.toType, conn.toAnchor);
                 
-                // Get canvas midpoint
-                const midXCanvas = (from.x + to.x) / 2;
-                const midYCanvas = (from.y + to.y) / 2;
+                // Calculate distance for curvature (must match drawing logic)
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const curvature = Math.max(80, dist * 0.4);
+
+                const cp1 = this.getBezierControlPoint(from, conn.fromAnchor, curvature);
+                const cp2 = this.getBezierControlPoint(to, conn.toAnchor, curvature);
+
+                // Cubic Bezier curve formula at t = 0.5
+                // P(0.5) = 0.125*P0 + 0.375*P1 + 0.375*P2 + 0.125*P3
+                const midXCanvas = 0.125 * from.x + 0.375 * cp1.x + 0.375 * cp2.x + 0.125 * to.x;
+                const midYCanvas = 0.125 * from.y + 0.375 * cp1.y + 0.375 * cp2.y + 0.125 * to.y;
                 
                 // Convert back to logical workspace coordinates
                 return {

@@ -98,7 +98,15 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     Route::middleware(['role:IT Support,Super Admin'])->prefix('switchmonitoring')->name('switchmonitoring.')->group(function () {
         Route::get('/', [SwitchMonitoringController::class, 'index'])->name('index');
         Route::get('/status', [SwitchMonitoringController::class, 'status'])->name('status');
+        Route::post('/ping-all', [SwitchMonitoringController::class, 'pingAll'])->name('pingAll');
         Route::get('/{id}/ping', [SwitchMonitoringController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
+    });
+
+    // ── Auto Discovery (Mockup) ──────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->group(function () {
+        Route::get('/autodiscovery', function () {
+            return view('autodiscovery.autodicovery', ['title' => 'Auto-Discovery Mockup']);
+        })->name('autodiscovery');
     });
 
     // ── Topology Design ─────────────────────────────────

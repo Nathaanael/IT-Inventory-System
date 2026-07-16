@@ -52,6 +52,11 @@ class MenuHelper
             'name'  => 'Topology Design',
             'path'  => '/topologydesign',
         ];
+        $autodiscovery = [
+            'icon'  => 'switch-monitoring', // Reuse icon for now
+            'name'  => 'Auto Discovery',
+            'path'  => '/autodiscovery',
+        ];
 
         $roleMenus = match ($role) {
             'Super Admin' => [
@@ -60,6 +65,7 @@ class MenuHelper
                 $dataswitch,
                 $switchmonitoring,
                 $topologydesign,
+                $autodiscovery,
                 [
                     'icon' => 'user-profile',
                     'name' => 'Master Data',
@@ -80,6 +86,7 @@ class MenuHelper
                 $inventory,
                 $switchmonitoring,
                 $topologydesign,
+                $autodiscovery,
             ],
 
             default => [

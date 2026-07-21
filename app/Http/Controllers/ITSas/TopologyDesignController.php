@@ -26,6 +26,9 @@ class TopologyDesignController extends Controller
                 'date' => date('Y-m-d'),
                 'servers' => [],
                 'panels' => [],
+                'gedungs' => [],
+                'internets' => [],
+                'routers' => [],
                 'connections' => [],
                 'idCounter' => 1
             ];

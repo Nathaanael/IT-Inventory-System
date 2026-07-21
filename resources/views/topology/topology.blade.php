@@ -185,6 +185,54 @@
                     </div>
                 </div>
 
+                {{-- Gedung --}}
+                <div class="topology-palette-item group cursor-grab active:cursor-grabbing rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500 p-3 transition-all duration-200 hover:bg-orange-50/50 dark:hover:bg-orange-900/10"
+                     draggable="true"
+                     @dragstart="onPaletteDragStart($event, 'gedung')"
+                     @dragend="isDraggingOver = false">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center shadow-sm">
+                            <img src="{{ asset('images/topology/gedung.png') }}" alt="Gedung" class="w-6 h-6 object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'text-white text-lg font-bold\'>G</span>'">
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">Gedung</div>
+                            <div class="text-[10px] text-gray-400 dark:text-gray-500">Lokasi / Gedung</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Internet --}}
+                <div class="topology-palette-item group cursor-grab active:cursor-grabbing rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-sky-300 dark:hover:border-sky-500 p-3 transition-all duration-200 hover:bg-sky-50/50 dark:hover:bg-sky-900/10"
+                     draggable="true"
+                     @dragstart="onPaletteDragStart($event, 'internet')"
+                     @dragend="isDraggingOver = false">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-300 to-sky-400 flex items-center justify-center shadow-sm">
+                            <img src="{{ asset('images/topology/internet.png') }}" alt="Internet" class="w-6 h-6 object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'text-white text-lg font-bold\'>@</span>'">
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">Internet</div>
+                            <div class="text-[10px] text-gray-400 dark:text-gray-500">ISP / WAN</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- WiFi Router Ceiling --}}
+                <div class="topology-palette-item group cursor-grab active:cursor-grabbing rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 p-3 transition-all duration-200 hover:bg-purple-50/50 dark:hover:bg-purple-900/10"
+                     draggable="true"
+                     @dragstart="onPaletteDragStart($event, 'router')"
+                     @dragend="isDraggingOver = false">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-300 to-purple-400 flex items-center justify-center shadow-sm">
+                            <img src="{{ asset('images/topology/router.jpg') }}" alt="Router" class="w-6 h-6 object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'text-white text-lg font-bold\'>W</span>'">
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">WiFi Router</div>
+                            <div class="text-[10px] text-gray-400 dark:text-gray-500">Ceiling AP / Router</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             {{-- Legend --}}
@@ -230,7 +278,7 @@
 
             {{-- Canvas Connection Lines Layer --}}
             <canvas id="connections-canvas" class="absolute inset-0 w-full h-full" style="z-index: 1; pointer-events: none;"
-                    x-effect="connections; servers; panels; zoom; panX; panY; selectedConnection; isDrawingConnection; drawLineFrom; drawLineTo; $nextTick(() => drawConnections())">
+                    x-effect="connections; servers; panels; gedungs; internets; routers; zoom; panX; panY; selectedConnection; isDrawingConnection; drawLineFrom; drawLineTo; $nextTick(() => drawConnections())">
             </canvas>
 
             {{-- Canvas Transform Layer --}}
@@ -447,6 +495,182 @@
                     </div>
                 </template>
 
+                {{-- ── Gedung Nodes ── --}}
+                <template x-for="gedung in gedungs" :key="gedung.id">
+                    <div class="absolute group"
+                         :id="'node-' + gedung.id"
+                         :style="`left: ${gedung.x}px; top: ${gedung.y}px; z-index: ${selectedNode === gedung.id ? 30 : 10};`"
+                         @mousedown.stop="startDragNode($event, gedung.id, 'gedung')"
+                         @click.stop="selectNode(gedung.id, 'gedung')"
+                         @dblclick.stop="openEditModal(gedung.id, 'gedung')">
+                        
+                        <div class="w-[140px] rounded-xl border-2 transition-all duration-200 shadow-lg"
+                             :class="selectedNode === gedung.id 
+                                ? 'border-indigo-500 shadow-indigo-500/20 ring-2 ring-indigo-500/20' 
+                                : 'border-orange-200 dark:border-orange-800 shadow-orange-500/5 hover:shadow-orange-500/15'">
+                            
+                            <div class="bg-gradient-to-r from-orange-300 to-orange-400 rounded-t-[10px] px-3 py-2 flex items-center gap-2">
+                                <span class="text-xs font-bold text-white truncate px-2" x-text="gedung.name"></span>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-800 rounded-b-[10px] p-3 flex flex-col items-center gap-2">
+                                <div class="w-16 h-16 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+                                    <img src="{{ asset('images/topology/gedung.png') }}" alt="Gedung" class="w-12 h-12 object-contain" onerror="this.outerHTML='<span class=\\'text-3xl\\'>🏢</span>'">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full"
+                                          :class="{
+                                              'bg-green-500 shadow-sm shadow-green-500/50': gedung.status === 'online',
+                                              'bg-red-500 shadow-sm shadow-red-500/50': gedung.status === 'offline',
+                                              'bg-gray-400': gedung.status === 'unknown' || gedung.status === 'pending'
+                                          }"></span>
+                                    <span class="text-[10px] font-semibold uppercase"
+                                          :class="{
+                                              'text-green-600 dark:text-green-400': gedung.status === 'online',
+                                              'text-red-600 dark:text-red-400': gedung.status === 'offline',
+                                              'text-gray-400': gedung.status === 'unknown' || gedung.status === 'pending'
+                                          }"
+                                          x-text="gedung.status === 'online' ? 'Online' : (gedung.status === 'offline' ? 'Offline' : 'Pending')"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Connection anchors --}}
+                        <div>
+                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(gedung.id, 'gedung', 'top')"></div>
+                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(gedung.id, 'gedung', 'bottom')"></div>
+                            <div class="absolute top-1/2 -left-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(gedung.id, 'gedung', 'left')"></div>
+                            <div class="absolute top-1/2 -right-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(gedung.id, 'gedung', 'right')"></div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- ── Internet Nodes ── --}}
+                <template x-for="inet in internets" :key="inet.id">
+                    <div class="absolute group"
+                         :id="'node-' + inet.id"
+                         :style="`left: ${inet.x}px; top: ${inet.y}px; z-index: ${selectedNode === inet.id ? 30 : 10};`"
+                         @mousedown.stop="startDragNode($event, inet.id, 'internet')"
+                         @click.stop="selectNode(inet.id, 'internet')"
+                         @dblclick.stop="openEditModal(inet.id, 'internet')">
+                        
+                        <div class="w-[140px] rounded-xl border-2 transition-all duration-200 shadow-lg"
+                             :class="selectedNode === inet.id 
+                                ? 'border-indigo-500 shadow-indigo-500/20 ring-2 ring-indigo-500/20' 
+                                : 'border-sky-200 dark:border-sky-800 shadow-sky-500/5 hover:shadow-sky-500/15'">
+                            
+                            <div class="bg-gradient-to-r from-sky-300 to-sky-400 rounded-t-[10px] px-3 py-2 flex items-center gap-2">
+                                <span class="text-xs font-bold text-white truncate px-2" x-text="inet.name"></span>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-800 rounded-b-[10px] p-3 flex flex-col items-center gap-2">
+                                <div class="w-16 h-16 rounded-lg bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center">
+                                    <img src="{{ asset('images/topology/internet.png') }}" alt="Internet" class="w-12 h-12 object-contain" onerror="this.outerHTML='<span class=\\'text-3xl\\'>🌐</span>'">
+                                </div>
+                                <div class="text-[10px] text-gray-400 dark:text-gray-500 font-mono" x-text="inet.ip || 'Belum diatur'"></div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full"
+                                          :class="{
+                                              'bg-green-500 shadow-sm shadow-green-500/50': inet.status === 'online',
+                                              'bg-red-500 shadow-sm shadow-red-500/50': inet.status === 'offline',
+                                              'bg-gray-400': inet.status === 'unknown' || inet.status === 'pending'
+                                          }"></span>
+                                    <span class="text-[10px] font-semibold uppercase"
+                                          :class="{
+                                              'text-green-600 dark:text-green-400': inet.status === 'online',
+                                              'text-red-600 dark:text-red-400': inet.status === 'offline',
+                                              'text-gray-400': inet.status === 'unknown' || inet.status === 'pending'
+                                          }"
+                                          x-text="inet.status === 'online' ? 'Online' : (inet.status === 'offline' ? 'Offline' : 'Pending')"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Connection anchors --}}
+                        <div>
+                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(inet.id, 'internet', 'top')"></div>
+                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(inet.id, 'internet', 'bottom')"></div>
+                            <div class="absolute top-1/2 -left-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(inet.id, 'internet', 'left')"></div>
+                            <div class="absolute top-1/2 -right-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(inet.id, 'internet', 'right')"></div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- ── WiFi Router Ceiling Nodes ── --}}
+                <template x-for="rtr in routers" :key="rtr.id">
+                    <div class="absolute group"
+                         :id="'node-' + rtr.id"
+                         :style="`left: ${rtr.x}px; top: ${rtr.y}px; z-index: ${selectedNode === rtr.id ? 30 : 10};`"
+                         @mousedown.stop="startDragNode($event, rtr.id, 'router')"
+                         @click.stop="selectNode(rtr.id, 'router')"
+                         @dblclick.stop="openEditModal(rtr.id, 'router')">
+                        
+                        <div class="w-[140px] rounded-xl border-2 transition-all duration-200 shadow-lg"
+                             :class="selectedNode === rtr.id 
+                                ? 'border-indigo-500 shadow-indigo-500/20 ring-2 ring-indigo-500/20' 
+                                : 'border-purple-200 dark:border-purple-800 shadow-purple-500/5 hover:shadow-purple-500/15'">
+                            
+                            <div class="bg-gradient-to-r from-purple-300 to-purple-400 rounded-t-[10px] px-3 py-2 flex items-center gap-2">
+                                <span class="text-xs font-bold text-white truncate px-2" x-text="rtr.name"></span>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-800 rounded-b-[10px] p-3 flex flex-col items-center gap-2">
+                                <div class="w-16 h-16 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
+                                    <img src="{{ asset('images/topology/router.jpg') }}" alt="Router" class="w-12 h-12 object-contain" onerror="this.outerHTML='<span class=\\'text-3xl\\'>📡</span>'">
+                                </div>
+                                <div class="text-[10px] text-gray-400 dark:text-gray-500 font-mono" x-text="rtr.ip || 'Belum diatur'"></div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full"
+                                          :class="{
+                                              'bg-green-500 shadow-sm shadow-green-500/50': rtr.status === 'online',
+                                              'bg-red-500 shadow-sm shadow-red-500/50': rtr.status === 'offline',
+                                              'bg-gray-400': rtr.status === 'unknown' || rtr.status === 'pending'
+                                          }"></span>
+                                    <span class="text-[10px] font-semibold uppercase"
+                                          :class="{
+                                              'text-green-600 dark:text-green-400': rtr.status === 'online',
+                                              'text-red-600 dark:text-red-400': rtr.status === 'offline',
+                                              'text-gray-400': rtr.status === 'unknown' || rtr.status === 'pending'
+                                          }"
+                                          x-text="rtr.status === 'online' ? 'Online' : (rtr.status === 'offline' ? 'Offline' : 'Pending')"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Connection anchors --}}
+                        <div>
+                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(rtr.id, 'router', 'top')"></div>
+                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(rtr.id, 'router', 'bottom')"></div>
+                            <div class="absolute top-1/2 -left-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(rtr.id, 'router', 'left')"></div>
+                            <div class="absolute top-1/2 -right-2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-900 shadow-lg cursor-crosshair z-40 transition-all duration-200"
+                                 :class="(connectionMode || isDrawingConnection) ? 'opacity-70 hover:opacity-100 hover:scale-150 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-70 hover:!opacity-100 hover:!scale-150'"
+                                 @click.stop="handleAnchorClick(rtr.id, 'router', 'right')"></div>
+                        </div>
+                    </div>
+                </template>
+
                 {{-- Waypoints for Connections --}}
                 <template x-for="conn in connections" :key="'wp-' + conn.id">
                     <template x-if="selectedConnection === conn.id">
@@ -543,7 +767,7 @@
                             </select>
                         </div>
                     </template>
-                    <template x-if="['server', 'switch'].includes(editModal.nodeType)">
+                    <template x-if="['server', 'switch', 'internet', 'router'].includes(editModal.nodeType)">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">IP Address</label>
                             <input type="text" x-model="editModal.ip"
@@ -628,12 +852,15 @@ document.addEventListener('alpine:init', () => {
         isPanning: false,
         panStartX: 0,
         panStartY: 0,
-        hasTopologyData: (initialTopologyData.servers && initialTopologyData.servers.length > 0) || (initialTopologyData.panels && initialTopologyData.panels.length > 0),
+        hasTopologyData: (initialTopologyData.servers && initialTopologyData.servers.length > 0) || (initialTopologyData.panels && initialTopologyData.panels.length > 0) || (initialTopologyData.gedungs && initialTopologyData.gedungs.length > 0) || (initialTopologyData.internets && initialTopologyData.internets.length > 0) || (initialTopologyData.routers && initialTopologyData.routers.length > 0),
         isEditMode: false,
         
         // Nodes
         servers: initialTopologyData.servers || [],
         panels: initialTopologyData.panels || [],
+        gedungs: initialTopologyData.gedungs || [],
+        internets: initialTopologyData.internets || [],
+        routers: initialTopologyData.routers || [],
         connections: initialTopologyData.connections || [],
         
         // Drag & Drop
@@ -689,6 +916,9 @@ document.addEventListener('alpine:init', () => {
             this.history.push({
                 servers: JSON.parse(JSON.stringify(this.servers)),
                 panels: JSON.parse(JSON.stringify(this.panels)),
+                gedungs: JSON.parse(JSON.stringify(this.gedungs)),
+                internets: JSON.parse(JSON.stringify(this.internets)),
+                routers: JSON.parse(JSON.stringify(this.routers)),
                 connections: JSON.parse(JSON.stringify(this.connections)),
                 idCounter: this.idCounter
             });
@@ -703,6 +933,9 @@ document.addEventListener('alpine:init', () => {
             this.redoStack.push({
                 servers: JSON.parse(JSON.stringify(this.servers)),
                 panels: JSON.parse(JSON.stringify(this.panels)),
+                gedungs: JSON.parse(JSON.stringify(this.gedungs)),
+                internets: JSON.parse(JSON.stringify(this.internets)),
+                routers: JSON.parse(JSON.stringify(this.routers)),
                 connections: JSON.parse(JSON.stringify(this.connections)),
                 idCounter: this.idCounter
             });
@@ -710,6 +943,9 @@ document.addEventListener('alpine:init', () => {
             const prevState = this.history.pop();
             this.servers = prevState.servers;
             this.panels = prevState.panels;
+            this.gedungs = prevState.gedungs || [];
+            this.internets = prevState.internets || [];
+            this.routers = prevState.routers || [];
             this.connections = prevState.connections;
             this.idCounter = prevState.idCounter;
             
@@ -730,6 +966,9 @@ document.addEventListener('alpine:init', () => {
             this.history.push({
                 servers: JSON.parse(JSON.stringify(this.servers)),
                 panels: JSON.parse(JSON.stringify(this.panels)),
+                gedungs: JSON.parse(JSON.stringify(this.gedungs)),
+                internets: JSON.parse(JSON.stringify(this.internets)),
+                routers: JSON.parse(JSON.stringify(this.routers)),
                 connections: JSON.parse(JSON.stringify(this.connections)),
                 idCounter: this.idCounter
             });
@@ -737,6 +976,9 @@ document.addEventListener('alpine:init', () => {
             const nextState = this.redoStack.pop();
             this.servers = nextState.servers;
             this.panels = nextState.panels;
+            this.gedungs = nextState.gedungs || [];
+            this.internets = nextState.internets || [];
+            this.routers = nextState.routers || [];
             this.connections = nextState.connections;
             this.idCounter = nextState.idCounter;
             
@@ -796,6 +1038,21 @@ document.addEventListener('alpine:init', () => {
                 this.$nextTick(() => this.drawConnections());
             }, { deep: true });
             
+            this.$watch('gedungs', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
+            this.$watch('internets', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
+            this.$watch('routers', () => { 
+                this.isDirty = true; 
+                this.$nextTick(() => this.drawConnections());
+            }, { deep: true });
+            
             this.$watch('connections', () => { 
                 this.isDirty = true; 
                 this.$nextTick(() => this.drawConnections());
@@ -834,6 +1091,12 @@ document.addEventListener('alpine:init', () => {
 
             if (dragType === 'server') {
                 this.addServer(x - 80, y - 30);
+            } else if (dragType === 'gedung') {
+                this.addGedung(x - 70, y - 30);
+            } else if (dragType === 'internet') {
+                this.addInternet(x - 70, y - 30);
+            } else if (dragType === 'router') {
+                this.addRouter(x - 70, y - 30);
             } else if (dragType === 'panel') {
                 this.addPanel(x - 100, y - 30);
             } else if (dragType === 'switch') {
@@ -843,6 +1106,39 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── Add Nodes ──
+        addGedung(x, y) {
+            this.saveStateForUndo();
+            const id = 'gedung-' + (this.idCounter++);
+            this.gedungs.push({
+                id, name: 'Gedung Baru', status: 'unknown', x, y
+            });
+            this.selectNode(id, 'gedung');
+            this.openEditModal(id, 'gedung');
+            this.showToast('Gedung ditambahkan.', 'info');
+        },
+
+        addInternet(x, y) {
+            this.saveStateForUndo();
+            const id = 'internet-' + (this.idCounter++);
+            this.internets.push({
+                id, name: 'Internet / ISP', ip: '', status: 'unknown', x, y
+            });
+            this.selectNode(id, 'internet');
+            this.openEditModal(id, 'internet');
+            this.showToast('Internet ditambahkan.', 'info');
+        },
+
+        addRouter(x, y) {
+            this.saveStateForUndo();
+            const id = 'router-' + (this.idCounter++);
+            this.routers.push({
+                id, name: 'WiFi Router Baru', ip: '', status: 'unknown', x, y
+            });
+            this.selectNode(id, 'router');
+            this.openEditModal(id, 'router');
+            this.showToast('WiFi Router ditambahkan.', 'info');
+        },
+
         addServer(x, y) {
             this.saveStateForUndo();
             const id = 'server-' + (this.idCounter++);
@@ -1529,6 +1825,15 @@ document.addEventListener('alpine:init', () => {
             if (this.selectedNodeType === 'server') {
                 this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
                 this.servers = this.servers.filter(s => s.id !== this.selectedNode);
+            } else if (this.selectedNodeType === 'gedung') {
+                this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
+                this.gedungs = this.gedungs.filter(g => g.id !== this.selectedNode);
+            } else if (this.selectedNodeType === 'internet') {
+                this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
+                this.internets = this.internets.filter(i => i.id !== this.selectedNode);
+            } else if (this.selectedNodeType === 'router') {
+                this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
+                this.routers = this.routers.filter(r => r.id !== this.selectedNode);
             } else if (this.selectedNodeType === 'panel') {
                 this.connections = this.connections.filter(c => c.fromId !== this.selectedNode && c.toId !== this.selectedNode);
                 this.panels = this.panels.filter(p => p.id !== this.selectedNode);
@@ -1554,6 +1859,9 @@ document.addEventListener('alpine:init', () => {
             this.saveStateForUndo();
             this.servers = [];
             this.panels = [];
+            this.gedungs = [];
+            this.internets = [];
+            this.routers = [];
             this.connections = [];
             this.selectedNode = null;
             this.selectedConnection = null;
@@ -1568,6 +1876,9 @@ document.addEventListener('alpine:init', () => {
                 date: this.topologyDate,
                 servers: this.servers,
                 panels: this.panels,
+                gedungs: this.gedungs,
+                internets: this.internets,
+                routers: this.routers,
                 connections: this.connections,
                 idCounter: this.idCounter
             };
@@ -1611,6 +1922,14 @@ document.addEventListener('alpine:init', () => {
                 if (s.ip) ipsToPing.push(s.ip);
             });
             
+            this.internets.forEach(i => {
+                if (i.ip) ipsToPing.push(i.ip);
+            });
+            
+            this.routers.forEach(r => {
+                if (r.ip) ipsToPing.push(r.ip);
+            });
+            
             this.panels.forEach(p => {
                 if (p.switches) {
                     p.switches.forEach(sw => {
@@ -1646,6 +1965,20 @@ document.addEventListener('alpine:init', () => {
                         }
                     });
                     
+                    // Update internets
+                    this.internets.forEach(i => {
+                        if (i.ip && statuses[i.ip]) {
+                            i.status = statuses[i.ip];
+                        }
+                    });
+
+                    // Update routers
+                    this.routers.forEach(r => {
+                        if (r.ip && statuses[r.ip]) {
+                            r.status = statuses[r.ip];
+                        }
+                    });
+                    
                     // Update switches in panels
                     this.panels.forEach(p => {
                         if (p.switches) {
@@ -1676,6 +2009,9 @@ document.addEventListener('alpine:init', () => {
 
         findNode(nodeId, nodeType) {
             if (nodeType === 'server') return this.servers.find(s => s.id === nodeId);
+            if (nodeType === 'gedung') return this.gedungs.find(g => g.id === nodeId);
+            if (nodeType === 'internet') return this.internets.find(i => i.id === nodeId);
+            if (nodeType === 'router') return this.routers.find(r => r.id === nodeId);
             if (nodeType === 'panel') return this.panels.find(p => p.id === nodeId);
             if (nodeType === 'switch') {
                 for (let panel of this.panels) {

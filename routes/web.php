@@ -9,6 +9,7 @@ use App\Http\Controllers\ITSas\DataSwitchController;
 use App\Http\Controllers\ITSas\InventoryController;
 use App\Http\Controllers\ITSas\SwitchMonitoringController;
 use App\Http\Controllers\ITSas\TopologyDesignController;
+use App\Http\Controllers\ITSas\QueueBoardController;
 
 // Sadmin
 use App\Http\Controllers\Sadmin\UserController;
@@ -106,6 +107,11 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::get('/', [TopologyDesignController::class, 'index'])->name('index');
         Route::post('/save', [TopologyDesignController::class, 'save'])->name('save');
         Route::post('/live-ping', [TopologyDesignController::class, 'livePing'])->name('livePing');
+    });
+
+    // ── Queue Board ─────────────────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('helpdesk/queue')->name('queueboard.')->group(function () {
+        Route::get('/', [QueueBoardController::class, 'index'])->name('index');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

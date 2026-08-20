@@ -53,6 +53,16 @@ class MenuHelper
             'path'  => '/topologydesign',
         ];
 
+       $helpdesk = [
+            'icon' => 'support-ticket',
+            'name' => 'Helpdesk',
+            'subItems' => [
+                ['name' => 'Queue Board', 'path' => '/helpdesk/queue', 'pro' => false],
+                ['name' => 'Report Issue', 'path' => '/helpdesk/report', 'pro' => false],
+                ['name' => 'Ticket History', 'path' => '/helpdesk/history', 'pro' => false],
+            ],
+        ];
+
         $roleMenus = match ($role) {
             'Super Admin' => [
                 $dashboard,
@@ -60,6 +70,7 @@ class MenuHelper
                 $dataswitch,
                 $switchmonitoring,
                 $topologydesign,
+                $helpdesk,
                 [
                     'icon' => 'user-profile',
                     'name' => 'Master Data',
@@ -80,6 +91,7 @@ class MenuHelper
                 $inventory,
                 $switchmonitoring,
                 $topologydesign,
+                $helpdesk,
             ],
 
             default => [
@@ -134,6 +146,7 @@ class MenuHelper
             'switch-monitoring' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.5 6.25C4.25736 6.25 3.25 7.25736 3.25 8.5V15.5C3.25 16.7426 4.25736 17.75 5.5 17.75H18.5C19.7426 17.75 20.75 16.7426 20.75 15.5V8.5C20.75 7.25736 19.7426 6.25 18.5 6.25H5.5ZM4.75 8.5C4.75 8.08579 5.08579 7.75 5.5 7.75H18.5C18.9142 7.75 19.25 8.08579 19.25 8.5V15.5C19.25 15.9142 18.9142 16.25 18.5 16.25H5.5C5.08579 16.25 4.75 15.9142 4.75 15.5V8.5Z" fill="currentColor"></path><path d="M6 12H8.5L9.5 9.5L11 14.5L12.5 10.5L13.5 12H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 
             'topology-design' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="18" cy="6" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="12" cy="12" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="6" cy="18" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="18" cy="18" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><path d="M7.6 7.6L10.4 10.4M13.6 10.4L16.4 7.6M10.4 13.6L7.6 16.4M13.6 13.6L16.4 16.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>',
+            'helpdesk' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.75 13V11C4.75 7.27208 7.77208 4.25 11.5 4.25H12.5C16.2279 4.25 19.25 7.27208 19.25 11V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M17 19.25H14.75C14.0596 19.25 13.5 18.6904 13.5 18V17.5C13.5 16.8096 14.0596 16.25 14.75 16.25H17C17.6904 16.25 18.25 16.8096 18.25 17.5V19.25Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M18.25 19.25V19.75C18.25 20.9926 17.2426 22 16 22H13.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4.25 15.25V12.75C4.25 12.1977 4.69772 11.75 5.25 11.75H5.75C6.30228 11.75 6.75 12.1977 6.75 12.75V15.25C6.75 15.8023 6.30228 16.25 5.75 16.25H5.25C4.69772 16.25 4.25 15.8023 4.25 15.25Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M17.25 15.25V12.75C17.25 12.1977 17.6977 11.75 18.25 11.75H18.75C19.3023 11.75 19.75 12.1977 19.75 12.75V15.25C19.75 15.8023 19.3023 16.25 18.75 16.25H18.25C17.6977 16.25 17.25 15.8023 17.25 15.25Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';

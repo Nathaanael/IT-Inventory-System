@@ -20,7 +20,6 @@
             <!-- Filter Perangkat -->
             <div class="relative flex flex-wrap sm:flex-nowrap gap-2 items-center">
                 <select x-model="selectedMacAddress" @change="fetchData()" class="w-full sm:w-auto rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500 cursor-pointer transition-colors">
-                    <option value="" class="dark:bg-gray-800">Semua Perangkat</option>
                     @foreach($devices as $device)
                         <option value="{{ $device->mac_address }}" class="dark:bg-gray-800">{{ $device->nama_perangkat }}</option>
                     @endforeach
@@ -151,7 +150,7 @@
             period: 'today',
             startDate: '',
             endDate: '',
-            selectedMacAddress: '',
+            selectedMacAddress: '{{ $devices->first()->mac_address ?? '' }}',
             tempChart: null,
             humidChart: null,
             pollInterval: null,

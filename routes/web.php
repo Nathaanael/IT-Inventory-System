@@ -9,6 +9,8 @@ use App\Http\Controllers\ITSas\DataSwitchController;
 use App\Http\Controllers\ITSas\InventoryController;
 use App\Http\Controllers\ITSas\SwitchMonitoringController;
 use App\Http\Controllers\ITSas\TopologyDesignController;
+use App\Http\Controllers\ITSas\EnvMonitoringController;
+use App\Http\Controllers\ITSas\DeviceManagerController;
 
 // Sadmin
 use App\Http\Controllers\Sadmin\UserController;
@@ -106,6 +108,22 @@ Route::middleware(['auth', 'first_login'])->group(function () {
         Route::get('/', [TopologyDesignController::class, 'index'])->name('index');
         Route::post('/save', [TopologyDesignController::class, 'save'])->name('save');
         Route::post('/live-ping', [TopologyDesignController::class, 'livePing'])->name('livePing');
+    });
+
+    // ── Environment Monitoring ──────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('envmonitoring')->name('envmonitoring.')->group(function () {
+        Route::get('/', [EnvMonitoringController::class, 'index'])->name('index');
+        Route::get('/data', [EnvMonitoringController::class, 'getData'])->name('data');
+    });
+
+    // ── Device Manager ──────────────────────────────────
+    Route::middleware(['role:IT Support,Super Admin'])->prefix('devicemanager')->name('devicemanager.')->group(function () {
+        Route::get('/', [DeviceManagerController::class, 'index'])->name('index');
+        Route::get('/create', [DeviceManagerController::class, 'create'])->name('create');
+        Route::post('/store', [DeviceManagerController::class, 'store'])->name('store');
+        Route::get('/edit/{id}', [DeviceManagerController::class, 'edit'])->name('edit');
+        Route::put('/update/{id}', [DeviceManagerController::class, 'update'])->name('update');
+        Route::delete('/destroy/{id}', [DeviceManagerController::class, 'destroy'])->name('destroy');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

@@ -31,35 +31,43 @@ class MenuHelper
             'name'  => 'Dashboard',
             'path'  => '/dashboard',
         ];
-        
-        $inventory = [
-            'icon'  => 'tables',
-            'name'  => 'Data Inventory',
-            'path'  => '/inventory',
+
+        // Gabungan Data Inventory + Data Switch
+        $dataAsset = [
+            'icon' => 'tables',
+            'name' => 'Data & Inventory',
+            'subItems' => [
+                ['name' => 'Data Inventory', 'path' => '/inventory', 'pro' => false],
+                ['name' => 'Data Switch', 'path' => '/dataswitch', 'pro' => false],
+            ],
         ];
-        $dataswitch = [
-            'icon'  => 'network-switch',
-            'name'  => 'Data Switch',
-            'path'  => '/dataswitch',
+
+        // Gabungan Switch Monitoring + Topology Design
+        $networkMonitoring = [
+            'icon' => 'switch-monitoring',
+            'name' => 'Network Monitoring',
+            'subItems' => [
+                ['name' => 'Switch Monitoring', 'path' => '/switchmonitoring', 'pro' => false],
+                ['name' => 'Topology Design', 'path' => '/topologydesign', 'pro' => false],
+            ],
         ];
-        $switchmonitoring = [
-            'icon'  => 'switch-monitoring',
-            'name'  => 'Switch Monitoring',
-            'path'  => '/switchmonitoring',
-        ];
-        $topologydesign = [
-            'icon'  => 'topology-design',
-            'name'  => 'Topology Design',
-            'path'  => '/topologydesign',
+
+        // Gabungan Device Manager + Environment Monitoring
+        $iotEnvironment = [
+            'icon' => 'environment-monitoring',
+            'name' => 'IoT & Environment',
+            'subItems' => [
+                ['name' => 'Device Manager', 'path' => '/devicemanager', 'pro' => false],
+                ['name' => 'Environment Monitoring', 'path' => '/envmonitoring', 'pro' => false],
+            ],
         ];
 
         $roleMenus = match ($role) {
             'Super Admin' => [
                 $dashboard,
-                $inventory,
-                $dataswitch,
-                $switchmonitoring,
-                $topologydesign,
+                $dataAsset,
+                $networkMonitoring,
+                $iotEnvironment,
                 [
                     'icon' => 'user-profile',
                     'name' => 'Master Data',
@@ -77,14 +85,14 @@ class MenuHelper
 
             'IT Support' => [
                 $dashboard,
-                $inventory,
-                $switchmonitoring,
-                $topologydesign,
+                $dataAsset,
+                $networkMonitoring,
+                $iotEnvironment,
             ],
 
             default => [
                 $dashboard,
-                $inventory,
+                $dataAsset,
             ],
         };
 
@@ -134,6 +142,9 @@ class MenuHelper
             'switch-monitoring' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.5 6.25C4.25736 6.25 3.25 7.25736 3.25 8.5V15.5C3.25 16.7426 4.25736 17.75 5.5 17.75H18.5C19.7426 17.75 20.75 16.7426 20.75 15.5V8.5C20.75 7.25736 19.7426 6.25 18.5 6.25H5.5ZM4.75 8.5C4.75 8.08579 5.08579 7.75 5.5 7.75H18.5C18.9142 7.75 19.25 8.08579 19.25 8.5V15.5C19.25 15.9142 18.9142 16.25 18.5 16.25H5.5C5.08579 16.25 4.75 15.9142 4.75 15.5V8.5Z" fill="currentColor"></path><path d="M6 12H8.5L9.5 9.5L11 14.5L12.5 10.5L13.5 12H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 
             'topology-design' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="18" cy="6" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="12" cy="12" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="6" cy="18" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><circle cx="18" cy="18" r="2.25" stroke="currentColor" stroke-width="1.5"></circle><path d="M7.6 7.6L10.4 10.4M13.6 10.4L16.4 7.6M10.4 13.6L7.6 16.4M13.6 13.6L16.4 16.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>',
+
+            // Ikon termometer + tetesan (dipakai untuk grup IoT & Environment)
+            'environment-monitoring' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.75 5.5C10.75 4.80964 11.3096 4.25 12 4.25C12.6904 4.25 13.25 4.80964 13.25 5.5V13.2549C13.9457 13.7367 14.4038 14.5407 14.4038 15.4519C14.4038 16.9107 13.2126 18.0904 11.7539 18.0904C10.2951 18.0904 9.10386 16.9107 9.10386 15.4519C9.10386 14.5407 9.5619 13.7367 10.2577 13.2549V5.5C10.2577 5.5 10.75 5.5 10.75 5.5ZM12 2.75C10.4812 2.75 9.25 3.98122 9.25 5.5V12.5271C8.30016 13.3311 7.60386 14.5203 7.60386 15.4519C7.60386 17.7391 9.46672 19.5904 11.7539 19.5904C14.0411 19.5904 15.9038 17.7391 15.9038 15.4519C15.9038 14.4108 15.4838 13.323 14.75 12.5271V5.5C14.75 3.98122 13.5188 2.75 12 2.75Z" fill="currentColor"></path><circle cx="11.7539" cy="15.6" r="1.6" fill="currentColor"></circle><path d="M18.5 10.5C18.5 10.5 20 12.6716 20 14.1C20 15.2598 19.1046 16.2 18 16.2C16.8954 16.2 16 15.2598 16 14.1C16 12.6716 18.5 10.5 18.5 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';

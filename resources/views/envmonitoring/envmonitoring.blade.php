@@ -65,7 +65,7 @@
                     <p class="text-xs text-gray-500 mt-1">Dalam derajat Celcius (°C)</p>
                 </div>
                 <div class="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl">
-                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
                 </div>
             </div>
             <div class="w-full min-h-[300px]" id="temperatureChart"></div>
@@ -79,7 +79,7 @@
                     <p class="text-xs text-gray-500 mt-1">Dalam persentase (%)</p>
                 </div>
                 <div class="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
                 </div>
             </div>
             <div class="w-full min-h-[300px]" id="humidityChart"></div>
@@ -88,12 +88,14 @@
     </div>
 
     <!-- Data Table Container -->
-    <!-- <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+    <!-- Data Table Container -->
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800/50 dark:text-gray-300">
                     <tr>
                         <th scope="col" class="px-6 py-4 font-medium">Waktu</th>
+                        <th scope="col" class="px-6 py-4 font-medium">Perangkat</th>
                         <th scope="col" class="px-6 py-4 font-medium">Suhu (°C)</th>
                         <th scope="col" class="px-6 py-4 font-medium">Kelembaban (%)</th>
                         <th scope="col" class="px-6 py-4 font-medium">Status</th>
@@ -102,14 +104,15 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     <template x-if="tableData.length === 0">
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
                                 Belum ada data dari sensor IoT.
                             </td>
                         </tr>
                     </template>
-                    <template x-for="item in tableData" :key="item.id">
+                    <template x-for="item in paginatedData" :key="item.id">
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <td class="px-6 py-4" x-text="item.waktu"></td>
+                            <td class="px-6 py-4 font-semibold text-gray-700 dark:text-gray-300" x-text="item.perangkat"></td>
                             <td class="px-6 py-4 font-medium" :class="item.is_danger ? 'text-red-500' : 'text-gray-900 dark:text-white'" x-text="item.suhu + ' °C'">
                             </td>
                             <td class="px-6 py-4" x-text="item.kelembaban + ' %'"></td>
@@ -132,7 +135,24 @@
                 </tbody>
             </table>
         </div>
-    </div> -->
+        
+        <!-- Pagination Controls -->
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex items-center justify-between" x-show="tableData.length > 0">
+            <span class="text-sm text-gray-500 dark:text-gray-400">
+                Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300" x-text="paginatedData.length ? ((currentPage - 1) * perPage) + 1 : 0"></span> 
+                sampai <span class="font-medium text-gray-700 dark:text-gray-300" x-text="((currentPage - 1) * perPage) + paginatedData.length"></span> 
+                dari <span class="font-medium text-gray-700 dark:text-gray-300" x-text="tableData.length"></span> data
+            </span>
+            <div class="flex gap-2">
+                <button @click="prevPage()" :disabled="currentPage === 1" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Sebelumnya
+                </button>
+                <button @click="nextPage()" :disabled="currentPage === totalPages" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Selanjutnya
+                </button>
+            </div>
+        </div>
+    </div>
 
     </div>
 </div>
@@ -154,6 +174,26 @@
             tempChart: null,
             humidChart: null,
             pollInterval: null,
+            currentPage: 1,
+            perPage: 5,
+
+            get paginatedData() {
+                const start = (this.currentPage - 1) * this.perPage;
+                const end = start + this.perPage;
+                return this.tableData.slice(start, end);
+            },
+
+            get totalPages() {
+                return Math.ceil(this.tableData.length / this.perPage) || 1;
+            },
+
+            nextPage() {
+                if (this.currentPage < this.totalPages) this.currentPage++;
+            },
+
+            prevPage() {
+                if (this.currentPage > 1) this.currentPage--;
+            },
 
             init() {
                 this.fetchData();
@@ -164,9 +204,12 @@
 
             async fetchData() {
                 try {
-                    let url = '{{ route("envmonitoring.data") }}';
+                    let url = '{{ route("envmonitoring.data") }}?period=' + this.period;
                     if (this.selectedMacAddress) {
-                        url += '?mac_address=' + encodeURIComponent(this.selectedMacAddress);
+                        url += '&mac_address=' + encodeURIComponent(this.selectedMacAddress);
+                    }
+                    if (this.period === 'custom' && this.startDate && this.endDate) {
+                        url += '&start_date=' + this.startDate + '&end_date=' + this.endDate;
                     }
                     const response = await fetch(url);
                     const data = await response.json();
@@ -176,6 +219,12 @@
                     this.tempChartData = data.chart.map(item => item.suhu);
                     this.humidChartData = data.chart.map(item => item.kelembaban);
                     
+                    // Reset pagination if out of bounds after fetch
+                    if (this.currentPage > this.totalPages) {
+                        this.currentPage = this.totalPages;
+                    }
+                    if (this.currentPage < 1) this.currentPage = 1;
+                    
                     this.renderCharts();
                 } catch (error) {
                     console.error('Failed to fetch sensor data:', error);
@@ -184,9 +233,8 @@
 
             updatePeriod(event) {
                 this.period = event.target.value;
-                console.log('Filter period:', this.period);
                 if (this.period !== 'custom') {
-                    // Logic to reload page with filter can go here
+                    this.fetchData();
                 }
             },
 
@@ -204,11 +252,19 @@
                     
                     this.startDate = formatDate(detail.selectedDates[0]);
                     this.endDate = formatDate(detail.selectedDates[1]);
+                    this.fetchData();
                 }
             },
 
             downloadExcel() {
-                alert('Fitur Download Excel akan segera diimplementasikan.');
+                let url = '{{ route("envmonitoring.export") }}?period=' + this.period;
+                if (this.selectedMacAddress) {
+                    url += '&mac_address=' + encodeURIComponent(this.selectedMacAddress);
+                }
+                if (this.period === 'custom' && this.startDate && this.endDate) {
+                    url += '&start_date=' + this.startDate + '&end_date=' + this.endDate;
+                }
+                window.location.href = url;
             },
 
             renderCharts() {

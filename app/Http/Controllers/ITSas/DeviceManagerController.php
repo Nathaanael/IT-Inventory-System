@@ -86,4 +86,40 @@ class DeviceManagerController extends Controller
 
         return redirect()->route('devicemanager.index')->with('success', 'Perangkat berhasil dihapus!');
     }
+
+    public function ping($id)
+    {
+        $device = \App\Models\Device::findOrFail($id);
+        $ip = $device->ip_address;
+        
+        if (empty($ip)) {
+            return response()->json([
+                'status' => 'offline',
+                'ip' => '-'
+            ]);
+        }
+
+        // Windows Ping: ping -n 1 -w 1000 IP
+        // Linux Ping: ping -c 1 -W 1 IP
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $command = $isWindows 
+            ? "ping -n 1 -w 1000 " . escapeshellarg($ip) 
+            : "ping -c 1 -W 1 " . escapeshellarg($ip);
+            
+        $output = [];
+        $result = -1;
+        exec($command, $output, $result);
+        
+        $outputStr = strtolower(implode(" ", $output));
+        $isOnline = false;
+        
+        if (strpos($outputStr, 'ttl=') !== false) {
+            $isOnline = true;
+        }
+        
+        return response()->json([
+            'status' => $isOnline ? 'online' : 'offline',
+            'ip' => $ip
+        ]);
+    }
 }

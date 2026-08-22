@@ -114,16 +114,18 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     Route::middleware(['role:IT Support,Super Admin'])->prefix('envmonitoring')->name('envmonitoring.')->group(function () {
         Route::get('/', [EnvMonitoringController::class, 'index'])->name('index');
         Route::get('/data', [EnvMonitoringController::class, 'getData'])->name('data');
+        Route::get('/export', [EnvMonitoringController::class, 'export'])->name('export');
     });
 
     // ── Device Manager ──────────────────────────────────
     Route::middleware(['role:IT Support,Super Admin'])->prefix('devicemanager')->name('devicemanager.')->group(function () {
         Route::get('/', [DeviceManagerController::class, 'index'])->name('index');
         Route::get('/create', [DeviceManagerController::class, 'create'])->name('create');
-        Route::post('/store', [DeviceManagerController::class, 'store'])->name('store');
+        Route::post('/', [DeviceManagerController::class, 'store'])->name('store');
         Route::get('/edit/{id}', [DeviceManagerController::class, 'edit'])->name('edit');
-        Route::put('/update/{id}', [DeviceManagerController::class, 'update'])->name('update');
-        Route::delete('/destroy/{id}', [DeviceManagerController::class, 'destroy'])->name('destroy');
+        Route::put('/{id}', [DeviceManagerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [DeviceManagerController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/ping', [DeviceManagerController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
     });
 
     // ── Activity Logs & Master Data (Hanya Super Admin) ──

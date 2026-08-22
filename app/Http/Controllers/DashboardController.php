@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Inventory;
 use App\Models\Department;
 use App\Models\ActivityLog;
+use App\Models\EnvSensorData;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -71,11 +72,19 @@ class DashboardController extends Controller
         $dateFilter($logQuery);
         $recentActivities = $logQuery->paginate($logPerPage)->withQueryString();
 
+        // 4. Server Room Averages (C8:85:41:C5:E2:44)
+        $serverRoomQuery = EnvSensorData::where('mac_address', 'C8:85:41:C5:E2:44');
+        $dateFilter($serverRoomQuery);
+        $avgSuhu = $serverRoomQuery->avg('suhu') ?? 0;
+        $avgKelembaban = $serverRoomQuery->avg('kelembaban') ?? 0;
+
         return view('dashboard.itsas', compact(
             'totalInventory', 
             'totalDepartments',
             'chartData', 
-            'recentActivities'
+            'recentActivities',
+            'avgSuhu',
+            'avgKelembaban'
         ));
     }
 }

@@ -8,7 +8,7 @@
     </div>
     @endif
 
-    <div x-data="{ showWifiModal: false }" class="grid grid-cols-1 gap-6 relative">
+    <div x-data="deviceManager()" class="grid grid-cols-1 gap-6 relative">
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
             
             <!-- Header & Action -->
@@ -63,23 +63,36 @@
                             <td class="px-5 py-4 text-sm font-semibold text-orange-500">{{ number_format($device->threshold_suhu, 1) }} °C</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $device->last_seen ? \Carbon\Carbon::parse($device->last_seen)->diffForHumans() : '-' }}</td>
                             <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                @if($device->status == 'Online')
-                                <span class="inline-flex rounded-full bg-success-50 px-2 py-1 text-xs font-semibold text-success-700 ring-1 ring-inset ring-success-600/20 dark:bg-success-500/10 dark:text-success-400 dark:ring-success-500/20">
-                                    Online
-                                </span>
-                                @else
-                                <span class="inline-flex rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/20">
-                                    Offline
-                                </span>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    <span class="relative flex h-3 w-3" :title="(pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'checking' ? 'Mengecek status...' : ((pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'online' ? 'Online' : ((pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'offline' ? 'Offline' : 'Belum dicek'))">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" x-show="(pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'checking'"></span>
+                                        <span class="relative inline-flex rounded-full h-3 w-3 transition-colors duration-300"
+                                            :class="{
+                                                'bg-gray-300 dark:bg-gray-600': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'unknown',
+                                                'bg-blue-400': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'checking',
+                                                'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'online',
+                                                'bg-red-500': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'offline'
+                                            }">
+                                        </span>
+                                    </span>
+                                    <span class="text-xs font-medium" 
+                                        :class="{
+                                            'text-gray-500': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'unknown',
+                                            'text-blue-500': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'checking',
+                                            'text-success-600 dark:text-success-400': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'online',
+                                            'text-red-600 dark:text-red-400': (pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'offline'
+                                        }" 
+                                        x-text="(pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'checking' ? 'Checking...' : ((pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'online' ? 'Online' : ((pingStatuses[{{ $device->id }}] || '{{ strtolower($device->status) }}') === 'offline' ? 'Offline' : 'Unknown'))">
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-5 py-4 text-center">
                                 <div class="flex items-center justify-center gap-3">
                                     <a href="{{ route('devicemanager.edit', $device->id) }}" class="text-blue-500 hover:text-blue-700 transition-colors" title="Edit Data">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     </a>
-                                    <button @click="showWifiModal = true" class="text-purple-500 hover:text-purple-700 transition-colors" title="Konfigurasi WiFi">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                                    <button @click="checkPing({{ $device->id }})" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP" :disabled="pingStatuses[{{ $device->id }}] === 'checking'" :class="{ 'opacity-50 cursor-not-allowed': pingStatuses[{{ $device->id }}] === 'checking' }">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                     </button>
                                     <form action="{{ route('devicemanager.destroy', $device->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus perangkat ini?');">
                                         @csrf
@@ -182,3 +195,41 @@
         </template>
     </div>
 @endsection
+@push('scripts')
+<script>
+    function deviceManager() {
+        return {
+            showWifiModal: false,
+            pingStatuses: {},
+            
+            async checkPing(id) {
+                this.pingStatuses[id] = 'checking';
+                try {
+                    const response = await fetch('{{ url('devicemanager') }}/' + id + '/ping', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.status === 429) {
+                        alert('Terlalu banyak permintaan ping. Silakan tunggu beberapa saat.');
+                        this.pingStatuses[id] = 'unknown';
+                        return;
+                    }
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        this.pingStatuses[id] = result.status; // 'online' or 'offline'
+                    } else {
+                        this.pingStatuses[id] = 'offline';
+                    }
+                } catch (error) {
+                    console.error('Ping failed:', error);
+                    this.pingStatuses[id] = 'offline';
+                }
+            }
+        }
+    }
+</script>
+@endpush

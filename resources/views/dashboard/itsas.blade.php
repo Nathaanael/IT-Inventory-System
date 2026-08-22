@@ -45,7 +45,7 @@
                 <!-- Overview Bento Box -->
                 <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-gray-100 dark:border-gray-800">
             <!-- Stat Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 
                 <!-- Stat Card 1 -->
                 <div class="rounded-3xl border border-gray-100 dark:border-gray-800 p-7 flex flex-col hover:border-brand-500/30 transition-colors bg-gray-50/50 dark:bg-gray-800/20">
@@ -72,6 +72,28 @@
                         <div class="flex flex-col">
                             <span class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mt-1 uppercase tracking-wider">vs last month</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Stat Card 3: Suhu Ruang Server -->
+                <div class="rounded-3xl border border-gray-100 dark:border-gray-800 p-7 flex flex-col hover:border-red-500/30 transition-colors bg-gray-50/50 dark:bg-gray-800/20">
+                    <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400 mb-5">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+                        <span class="font-bold text-sm tracking-wide">Suhu Ruang Server Core</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{{ number_format($avgSuhu, 1) }}<span class="text-xl font-medium text-gray-500 ml-1">°C</span></h3>
+                    </div>
+                </div>
+
+                <!-- Stat Card 4: Kelembaban Ruang Server -->
+                <div class="rounded-3xl border border-gray-100 dark:border-gray-800 p-7 flex flex-col hover:border-blue-500/30 transition-colors bg-gray-50/50 dark:bg-gray-800/20">
+                    <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400 mb-5">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+                        <span class="font-bold text-sm tracking-wide">Kelembaban Server Core</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{{ number_format($avgKelembaban, 1) }}<span class="text-xl font-medium text-gray-500 ml-1">%</span></h3>
                     </div>
                 </div>
 

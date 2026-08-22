@@ -13,4 +13,9 @@ class EnvSensorData extends Model
         'kelembaban',
         'status',
     ];
+
+    public function device()
+    {
+        return $this->belongsTo(Device::class, 'mac_address', 'mac_address');
+    }
 }

@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 class DeviceManagerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $devices = \App\Models\Device::all();
+        $query = \App\Models\Device::query();
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where('nama_perangkat', 'like', "%{$search}%")
+                  ->orWhere('mac_address', 'like', "%{$search}%")
+                  ->orWhere('lokasi', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%");
+        }
+
+        $devices = $query->orderBy('created_at', 'desc')->get();
         return view('devicemanager.devicemanager', [
             'title' => 'Device Manager',
             'devices' => $devices

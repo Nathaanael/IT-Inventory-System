@@ -46,10 +46,10 @@
                 </div>
             </div>
 
-            <!-- Tombol Download Excel -->
-            <button @click="downloadExcel()" class="flex-shrink-0 flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
+            <!-- Tombol Download PDF -->
+            <button @click="downloadPdf()" class="flex-shrink-0 flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Export Excel
+                Export PDF
             </button>
         </div>
     </div>
@@ -256,15 +256,56 @@
                 }
             },
 
-            downloadExcel() {
-                let url = '{{ route("envmonitoring.export") }}?period=' + this.period;
-                if (this.selectedMacAddress) {
-                    url += '&mac_address=' + encodeURIComponent(this.selectedMacAddress);
+            async downloadPdf() {
+                let tempImage = '';
+                let humidImage = '';
+                
+                if (this.tempChart) {
+                    const res = await this.tempChart.dataURI();
+                    tempImage = res.imgURI;
                 }
+                
+                if (this.humidChart) {
+                    const res = await this.humidChart.dataURI();
+                    humidImage = res.imgURI;
+                }
+                
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("envmonitoring.exportPdf") }}';
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken.getAttribute('content');
+                    form.appendChild(csrfInput);
+                }
+                
+                const addInput = (name, value) => {
+                    if (value) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name;
+                        input.value = value;
+                        form.appendChild(input);
+                    }
+                };
+                
+                addInput('temp_image', tempImage);
+                addInput('humid_image', humidImage);
+                addInput('period', this.period);
+                addInput('mac_address', this.selectedMacAddress);
+                
                 if (this.period === 'custom' && this.startDate && this.endDate) {
-                    url += '&start_date=' + this.startDate + '&end_date=' + this.endDate;
+                    addInput('start_date', this.startDate);
+                    addInput('end_date', this.endDate);
                 }
-                window.location.href = url;
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
             },
 
             renderCharts() {

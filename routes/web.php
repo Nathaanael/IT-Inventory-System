@@ -114,7 +114,7 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     Route::middleware(['role:IT Support,Super Admin'])->prefix('envmonitoring')->name('envmonitoring.')->group(function () {
         Route::get('/', [EnvMonitoringController::class, 'index'])->name('index');
         Route::get('/data', [EnvMonitoringController::class, 'getData'])->name('data');
-        Route::get('/export', [EnvMonitoringController::class, 'export'])->name('export');
+        Route::post('/export-pdf', [EnvMonitoringController::class, 'exportPdf'])->name('exportPdf');
     });
 
     // ── Device Manager ──────────────────────────────────

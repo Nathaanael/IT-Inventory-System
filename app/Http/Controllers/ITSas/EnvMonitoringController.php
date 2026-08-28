@@ -55,10 +55,10 @@ class EnvMonitoringController extends Controller
 
     private function buildQuery(Request $request)
     {
-        $macAddress = $request->query('mac_address');
-        $period = $request->query('period', 'today');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        $macAddress = $request->input('mac_address');
+        $period = $request->input('period', 'today');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $query = EnvSensorData::query();
 
@@ -79,43 +79,27 @@ class EnvMonitoringController extends Controller
         return $query;
     }
 
-    public function export(Request $request)
+    public function exportPdf(Request $request)
     {
         $query = $this->buildQuery($request);
         $data = $query->with('device')->orderBy('created_at', 'desc')->get();
 
-        $fileName = 'sensor_data_' . date('Y_m_d_His') . '.csv';
-        
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+        $summary = [
+            'maxTemp' => $data->max('suhu') ?? 0,
+            'minTemp' => $data->min('suhu') ?? 0,
+            'avgTemp' => $data->avg('suhu') ? round($data->avg('suhu'), 2) : 0,
+            'dangerCount' => $data->filter(function($item) {
+                return $item->status === 'BAHAYA' || $item->suhu >= 30;
+            })->count(),
         ];
 
-        $columns = ['No', 'Waktu', 'Perangkat', 'MAC Address', 'Suhu (°C)', 'Kelembaban (%)', 'Status'];
+        $tempImage = $request->input('temp_image');
+        $humidImage = $request->input('humid_image');
+        $period = $request->input('period', 'today');
 
-        $callback = function() use($data, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('envmonitoring.pdf', compact('data', 'summary', 'tempImage', 'humidImage', 'period'))
+            ->setPaper('a4', 'portrait');
 
-            $row = 1;
-            foreach ($data as $item) {
-                fputcsv($file, [
-                    $row++,
-                    $item->created_at->format('Y-m-d H:i:s'),
-                    $item->device ? $item->device->nama_perangkat : 'Unknown',
-                    $item->mac_address,
-                    $item->suhu,
-                    $item->kelembaban,
-                    $item->status
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $pdf->download('Laporan_Monitoring_Lingkungan.pdf');
     }
 }

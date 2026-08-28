@@ -94,13 +94,9 @@
                                     <button @click="checkPing({{ $device->id }})" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP" :disabled="pingStatuses[{{ $device->id }}] === 'checking'" :class="{ 'opacity-50 cursor-not-allowed': pingStatuses[{{ $device->id }}] === 'checking' }">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                     </button>
-                                    <form action="{{ route('devicemanager.destroy', $device->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus perangkat ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 transition-colors" title="Hapus Data">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
-                                    </form>
+                                    <button @click="$dispatch('open-delete-modal', { id: {{ $device->id }} })" class="text-red-500 hover:text-red-700 transition-colors" title="Hapus Data">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -193,6 +189,50 @@
                 </div>
             </div>
         </template>
+
+        <!-- Modal Delete -->
+        <template x-teleport="body">
+            <div 
+                x-show="showDeleteModal" 
+                @open-delete-modal.window="
+                    showDeleteModal = true;
+                    deleteId = $event.detail.id;
+                    deleteUrl = '{{ route('devicemanager.destroy', 'REPLACE_ID') }}'.replace('REPLACE_ID', deleteId);
+                "
+                class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" 
+                x-transition.opacity 
+                style="display: none;"
+            >
+                <div 
+                    class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 sm:p-8 border border-gray-100 dark:border-gray-800" 
+                    @click.away="showDeleteModal = false" 
+                    x-show="showDeleteModal"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                >
+                    <div class="mb-5 flex items-center gap-3 text-red-500">
+                        <div class="p-2 bg-red-100 dark:bg-red-500/20 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white/90">Konfirmasi Hapus</h3>
+                    </div>
+                    
+                    <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                        Apakah Anda yakin ingin menghapus perangkat ini? Data yang sudah dihapus tidak dapat dikembalikan.
+                    </p>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button type="button" @click="showDeleteModal = false" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Batal</button>
+                        <form :action="deleteUrl" method="POST" class="m-0">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600 transition-colors shadow-theme-md">Ya, Hapus</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 @endsection
 @push('scripts')
@@ -200,6 +240,9 @@
     function deviceManager() {
         return {
             showWifiModal: false,
+            showDeleteModal: false,
+            deleteUrl: '',
+            deleteId: null,
             pingStatuses: {},
             
             async checkPing(id) {

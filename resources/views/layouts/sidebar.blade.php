@@ -63,20 +63,17 @@
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
         'justify-start'">
-        <a href="/" class="flex flex-col justify-center">
-            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="text-3xl font-bold tracking-widest text-brand-500 dark:text-brand-400 leading-none">
-                VAULT
-            </span>
-            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">
-                Virtual Asset & User Logging Tracker
-            </span>
-            
-            <span x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                class="text-2xl font-bold text-brand-500 dark:text-brand-400 text-center w-full">
-                V
-            </span>
+        <a href="/" class="flex flex-col justify-center items-center">
+            <!-- TEMPLATE LOGO PERUSAHAAN -->
+            <!-- Letakkan tag <img> logo perusahaan Anda di sini -->
+            <!-- Contoh: <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-10 w-auto" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"> -->
+            <!-- Contoh Icon (bisa dihapus nanti): -->
+            <img src="{{ asset('images/logo/logo_ind.png') }}" alt="Logo" class="w-28 h-auto object-contain" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"> 
+            <!-- <div class="bg-gray-200 dark:bg-gray-800 rounded-lg p-2 flex items-center justify-center">
+                <svg class="w-8 h-8 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            </div> -->
         </a>
     </div>
 

@@ -48,7 +48,7 @@
                 </svg>
             </button>
 
-            <a href="/" class="flex flex-col xl:hidden">
+            <a href="/" class="flex flex-col ml-2 xl:ml-6">
                 <!-- Full Text Logo -->
                 <span class="text-2xl font-bold tracking-widest text-brand-500 dark:text-brand-400 leading-none">
                     VAULT

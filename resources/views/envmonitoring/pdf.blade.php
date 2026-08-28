@@ -18,9 +18,9 @@
 </head>
 <body>
 
-    <div class="kop-surat" style="text-align: center; border-bottom: none; margin-bottom: 20px;">
+    <div class="kop-surat" style="text-align: left; border-bottom: none; margin-bottom: 20px;">
         <!-- Placeholder untuk Logo Indofood -->
-        <div style="display: inline-block; width: 150px; height: 60px; border: 1px dashed #999; text-align: center; line-height: 60px; font-weight: bold; background: #eee;">
+        <div style="width: 150px; height: 60px; text-align: center; line-height: 60px; font-weight: bold; background: #eee;">
             <img src="{{ public_path('images/logo/logo_ind.png') }}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
     </div>

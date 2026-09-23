@@ -22,6 +22,9 @@
                           'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300') }}">
                         {{ $user->role }}
                     </span>
+                    <span class='ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $user->mfa_secret ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' }}'>
+                        {{ $user->mfa_secret ? 'MFA Aktif' : 'MFA Belum Aktif' }}
+                    </span>
                 </td>
                 <td class="px-5 py-4 text-center">
                     <div class="flex items-center justify-center gap-3">
@@ -37,6 +40,15 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         </button>
                         
+                        @if($user->mfa_secret)
+                        <form action={{ route('master.users.unlink-mfa', $user) }} method=POST class='inline' onsubmit='return confirm(`Unlink Microsoft Authenticator user ini? User wajib menghubungkannya kembali saat login berikutnya.`)'>
+                            @csrf
+                            <button type=submit class='text-purple-500 hover:text-purple-700 transition-colors' title='Unlink MFA'>
+                                <svg class='w-5 h-5' fill=none stroke=currentColor viewBox='0 0 24 24'><path stroke-linecap=round stroke-linejoin=round stroke-width=2 d='M13.828 10.172a4 4 0 010 5.656l-2 2a4 4 0 01-5.656-5.656l1-1m3-3 2-2a4 4 0 015.656 5.656l-1 1m-9.5 3.5 9-9'></path></svg>
+                            </button>
+                        </form>
+                        @endif
+
                         @if($user->id !== Auth::id())
                         <button @click="$dispatch('open-delete-modal', { id: {{ $user->id }}, role: '{{ $user->role }}' })" class="text-red-500 hover:text-red-700 transition-colors" title="Hapus Data">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

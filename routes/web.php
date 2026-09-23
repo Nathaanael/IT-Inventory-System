@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
+use App\Http\Controllers\Auth\MfaController;
 
 // ITSAS
 use App\Http\Controllers\ITSas\DataSwitchController;
@@ -35,12 +36,23 @@ Route::middleware('guest')->group(function () {
         return view('auth.login', ['title' => 'Log In']);
     })->name('login');
     
-    Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
+    Route::post('/login', [LoginController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login.submit');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+Route::get('/mfa', [MfaController::class, 'show'])->name('mfa.setup');
+Route::post('/mfa/setup', [MfaController::class, 'verifySetup'])
+    ->middleware('throttle:5,1')
+    ->name('mfa.setup.verify');
+Route::post('/mfa/challenge', [MfaController::class, 'verifyChallenge'])
+    ->middleware('throttle:5,1')
+    ->name('mfa.challenge.verify');
+Route::post('/mfa/cancel', [MfaController::class, 'cancel'])->name('mfa.cancel');
 
 
 // ───────────────────────────────────────────────────
@@ -58,7 +70,7 @@ Route::middleware('auth')->group(function () {
 // ───────────────────────────────────────────────────
 // PROTECTED ROUTES (Membutuhkan Login & Password sudah di-set)
 // ───────────────────────────────────────────────────
-Route::middleware(['auth', 'first_login'])->group(function () {
+Route::middleware(['auth', 'first_login', 'mfa'])->group(function () {
 
     // ── Dashboard ──────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -145,6 +157,7 @@ Route::middleware(['auth', 'first_login'])->group(function () {
                 Route::put('/{user}', [UserController::class, 'update'])->name('update');
                 Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
                 Route::post('/{user}/reset-pin', [UserController::class, 'resetPin'])->name('reset-pin');
+                Route::post('/{user}/unlink-mfa', [UserController::class, 'unlinkMfa'])->name('unlink-mfa');
                 Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
             });
             
@@ -159,8 +172,6 @@ Route::middleware(['auth', 'first_login'])->group(function () {
     });
 
 });
-
-
 
 
 

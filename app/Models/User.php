@@ -35,6 +35,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'vault_pin',
+        'mfa_secret',
         'remember_token',
     ];
 
@@ -47,6 +48,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'mfa_secret' => 'encrypted',
+            'mfa_enabled_at' => 'datetime',
+            'mfa_last_used_at' => 'integer',
         ];
     }
 

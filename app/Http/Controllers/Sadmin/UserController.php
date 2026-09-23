@@ -148,4 +148,31 @@ class UserController extends Controller
 
         return redirect()->route('master.users.index')->with('success', 'Vault PIN berhasil direset. User dapat mengatur PIN baru dari menu Vault.');
     }
+
+    public function unlinkMfa(Request $request, User $user)
+    {
+        if (!$user->mfa_secret) {
+            return redirect()->route('master.users.index')->with('error', 'MFA user tersebut belum terhubung.');
+        }
+
+        $user->forceFill([
+            'mfa_secret' => null,
+            'mfa_enabled_at' => null,
+            'mfa_last_used_at' => null,
+        ])->save();
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'update',
+            'description' => 'melakukan unlink MFA untuk akun: '.$user->name,
+            'ip_address' => $request->ip(),
+        ]);
+
+        if ($user->is(Auth::user())) {
+            $request->session()->forget('mfa.verified_user_id');
+        }
+
+        return redirect()->route('master.users.index')
+            ->with('success', 'MFA berhasil di-unlink. User wajib menghubungkan Microsoft Authenticator saat login berikutnya.');
+    }
 }

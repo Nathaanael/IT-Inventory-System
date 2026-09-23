@@ -43,6 +43,8 @@ class ChangePasswordController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        return redirect()->route('dashboard')->with('success', 'Password berhasil diubah!');
+        $request->session()->put('mfa.pending_user_id', $user->id);
+
+        return redirect()->route('mfa.setup')->with('success', 'Password berhasil diubah. Sekarang hubungkan Microsoft Authenticator.');
     }
 }

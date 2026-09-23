@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -18,27 +19,20 @@ class LoginController extends Controller
 
         $user = User::where('username_ad', $request->username_ad)->first();
 
-        if ($user) {
-            // Jika password masih null (first time login)
-            if ($user->password === null) {
-                // Cek apakah password yang dimasukkan sama dengan username_ad
-                if ($request->password === $user->username_ad) {
-                    Auth::login($user);
-                    $request->session()->regenerate();
-                    return redirect()->route('change_password')->with('warning', 'Silakan ganti password Anda untuk pertama kalinya.');
-                }
-            } else {
-                // Jika password sudah di set, gunakan mekanisme standar
-                if (Auth::attempt(['username_ad' => $request->username_ad, 'password' => $request->password])) {
-                    $request->session()->regenerate();
-                    
-                    if (Auth::user()->role === 'IT Support') {
-                        return redirect()->route('inventory.index');
-                    }
-                    
-                    return redirect()->route('dashboard');
-                }
-            }
+        if ($user && $user->password === null && hash_equals($user->username_ad, $request->password)) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            $request->session()->put('mfa.pending_user_id', $user->id);
+
+            return redirect()->route('change_password')
+                ->with('warning', 'Silakan ganti password Anda untuk pertama kalinya.');
+        }
+
+        if ($user && $user->password !== null && Hash::check($request->password, $user->password)) {
+            $request->session()->regenerate();
+            $request->session()->put('mfa.pending_user_id', $user->id);
+
+            return redirect()->route('mfa.setup');
         }
 
         return back()->withErrors([

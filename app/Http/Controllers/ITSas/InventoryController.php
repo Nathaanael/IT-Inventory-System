@@ -269,10 +269,52 @@ class InventoryController extends Controller
             $isOnline = true;
         }
         
+        $reply = $this->parsePingReply($output);
+
         return response()->json([
             'status' => $isOnline ? 'online' : 'offline',
-            'ip' => $ip
+            'ip' => $ip,
+            'reply' => $reply['line'],
+            'time' => $isOnline ? $reply['time'] : null,
         ]);
+    }
+
+    /**
+     * Ambil baris balasan dari output ping, misalnya
+     * "Reply from 10.0.0.1: bytes=32 time=2ms TTL=128" atau "Request timed out.".
+     */
+    private function parsePingReply(array $output): array
+    {
+        $lines = array_values(array_filter(array_map('trim', $output), 'strlen'));
+
+        $line = null;
+        foreach ($lines as $candidate) {
+            if (stripos($candidate, 'ttl=') !== false) {
+                $line = $candidate;
+                break;
+            }
+        }
+
+        // Tanpa TTL, baris kedua berisi alasannya (setelah header "Pinging ...").
+        // Di Linux, timeout langsung diikuti baris statistik "--- ... ---".
+        if ($line === null) {
+            $line = $lines[1] ?? 'Request timed out.';
+            if (str_starts_with($line, '---')) {
+                $line = 'Request timed out.';
+            }
+        }
+
+        // "time<1ms" dihitung 0ms, sama seperti statistik CMD.
+        $time = null;
+        if (preg_match('/([=<])\s*([\d.,]+)\s*ms/i', $line, $matches)) {
+            $time = $matches[1] === '<' ? 0.0 : (float) str_replace(',', '.', $matches[2]);
+        }
+
+        return [
+            // Output Windows mengikuti codepage OEM, bukan selalu UTF-8.
+            'line' => mb_scrub($line, 'UTF-8'),
+            'time' => $time,
+        ];
     }
 
 

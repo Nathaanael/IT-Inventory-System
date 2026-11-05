@@ -89,7 +89,7 @@ Route::middleware(['auth', 'first_login', 'mfa'])->group(function () {
         Route::post('/vault/verify-pin', [InventoryController::class, 'verifyPin'])->name('vault.verify-pin')->middleware('throttle:5,1');
         Route::post('/{inventory}/reveal', [InventoryController::class, 'revealPassword'])->name('vault.reveal')->middleware('throttle:5,1');
         
-        Route::get('/{inventory}/ping', [InventoryController::class, 'ping'])->name('ping')->middleware('throttle:10,1');
+        Route::get('/{inventory}/ping', [InventoryController::class, 'ping'])->name('ping')->middleware('throttle:inventory-ping');
         
         // RDP Endpoint
         Route::get('/{inventory}/rdp', [InventoryController::class, 'downloadRdp'])->name('rdp');

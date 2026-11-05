@@ -61,6 +61,33 @@
                 </div>
             </div>
 
+            <!-- Pencarian per Segmen IP -->
+            <div class="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Cari Segmen IP</span>
+                <div class="flex items-center gap-1.5">
+                    @foreach ($ipSegments as $position => $segment)
+                        <input
+                            type="text"
+                            form="searchForm"
+                            name="ip{{ $position }}"
+                            id="ipSegment{{ $position }}"
+                            value="{{ $segment }}"
+                            inputmode="numeric"
+                            maxlength="3"
+                            autocomplete="off"
+                            aria-label="Segmen IP ke-{{ $position }}"
+                            @keydown="handleIpSegmentKey($event, {{ $position }})"
+                            @input="handleIpSegmentInput($event, {{ $position }})"
+                            class="w-14 rounded-lg border border-gray-300 bg-transparent px-2 py-2 text-center text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500"
+                        />
+                        @if (!$loop->last)
+                            <span class="text-gray-400" aria-hidden="true">.</span>
+                        @endif
+                    @endforeach
+                </div>
+                <button type="button" @click="clearIpSegments()" class="text-sm font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400 transition-colors">Reset</button>
+            </div>
+
             <!-- Unit Filter Tabs (UI Only) -->
             <div class="mb-6 flex w-full border-b border-gray-200 dark:border-gray-800" 
                  x-data="{ 
@@ -197,7 +224,7 @@
                                     })" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Lihat Detail">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </button>
-                                    <button @click="checkPing(rowId)" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP" :disabled="pingStatuses[rowId] === 'checking'" :class="{ 'opacity-50 cursor-not-allowed': pingStatuses[rowId] === 'checking' }">
+                                    <button @click="openPingConsole(rowId, {{ Js::from($inventory->ip_address) }}, {{ Js::from($inventory->nama_user) }})" class="text-cyan-500 hover:text-cyan-700 transition-colors" title="Ping IP">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                     </button>
                                     <a href="{{ route('inventory.rdp', $inventory->id) }}" class="text-green-500 hover:text-green-700 transition-colors" title="Download RDP (One-Click Remote)" target="_blank">
@@ -462,6 +489,71 @@
             </div>
         </template>
 
+        <!-- Modal Ping Console -->
+        <template x-teleport="body">
+            <div
+                x-show="pingConsole.open"
+                @keydown.escape.window="if (pingConsole.open) closePingConsole()"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                style="display: none;"
+            >
+                <div class="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-900 sm:p-6 border border-gray-100 dark:border-gray-800">
+                    <div class="mb-4 flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-white/90">
+                                Ping <span x-text="pingConsole.ip"></span>
+                            </h3>
+                            <p class="truncate text-sm text-gray-500 dark:text-gray-400" x-text="pingConsole.name"></p>
+                        </div>
+                        <button @click="closePingConsole()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" title="Tutup">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Output Terminal -->
+                    <div id="ping-output" class="h-72 overflow-auto rounded-lg bg-[#0c0c0c] p-4 text-[13px] leading-5 text-gray-200" style="font-family: Consolas, 'Courier New', monospace;">
+                        <div class="whitespace-pre text-gray-500">&gt; ping <span x-text="pingConsole.ip"></span> -t</div>
+                        <template x-for="line in pingConsole.lines" :key="line.id">
+                            <div class="min-h-5 whitespace-pre" :class="{ 'text-red-400': line.type === 'fail', 'text-amber-400': line.type === 'error' }" x-text="line.text"></div>
+                        </template>
+                        <div x-show="pingConsole.running" class="animate-pulse text-gray-500">_</div>
+                    </div>
+
+                    <!-- Statistik Berjalan -->
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Terkirim</p>
+                            <p class="text-base font-semibold text-gray-800 dark:text-white/90" x-text="pingConsole.stats.sent"></p>
+                        </div>
+                        <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Diterima</p>
+                            <p class="text-base font-semibold text-success-600 dark:text-success-500" x-text="pingConsole.stats.received"></p>
+                        </div>
+                        <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Hilang</p>
+                            <p class="text-base font-semibold" :class="pingConsole.stats.lost > 0 ? 'text-red-500' : 'text-gray-800 dark:text-white/90'" x-text="`${pingConsole.stats.lost} (${pingLossPercent()}%)`"></p>
+                        </div>
+                        <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Min / Maks / Rata-rata</p>
+                            <p class="text-base font-semibold text-gray-800 dark:text-white/90" x-text="pingConsole.stats.received ? `${pingConsole.stats.min} / ${pingConsole.stats.max} / ${pingAverage()} ms` : '-'"></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex justify-end gap-3">
+                        <button type="button" @click="closePingConsole()" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Tutup</button>
+                        <button type="button" x-show="pingConsole.running" @click="stopPing()" class="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600 transition-colors shadow-theme-md">Hentikan</button>
+                        <button type="button" x-show="!pingConsole.running" @click="startPing()" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 transition-colors shadow-theme-md">Ping Lagi</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
     </div>
 
     <!-- Alpine Logic -->
@@ -496,41 +588,222 @@
                 deleteId: null,
                 deleteUrl: '',
                 isSearching: false,
+                searchRequestId: 0,
+                ipSearchTimer: null,
                 pingStatuses: {},
-                
+
+                pingConsole: {
+                    open: false,
+                    running: false,
+                    id: null,
+                    ip: '',
+                    name: '',
+                    lines: [],
+                    stats: { sent: 0, received: 0, lost: 0, min: null, max: null, total: 0 },
+                },
+                pingRunId: 0,
+                pingLineId: 0,
+                pingAbort: null,
+
                 init() {
                     // Auto-ping is disabled to reduce server load
                 },
 
-                async checkPing(id) {
-                    this.pingStatuses[id] = 'checking';
-                    
+                openPingConsole(id, ip, name) {
+                    this.stopPing();
+                    Object.assign(this.pingConsole, { open: true, id, ip, name });
+                    this.startPing();
+                },
+
+                closePingConsole() {
+                    this.stopPing();
+                    this.pingConsole.open = false;
+                },
+
+                startPing() {
+                    const c = this.pingConsole;
+                    c.lines = [];
+                    c.stats = { sent: 0, received: 0, lost: 0, min: null, max: null, total: 0 };
+                    c.running = true;
+                    this.pingStatuses[c.id] = 'checking';
+                    this.addPingLine(`Pinging ${c.ip} with 32 bytes of data:`);
+                    this.runPingLoop(++this.pingRunId);
+                },
+
+                // Seperti Ctrl+C di CMD: berhenti lalu tampilkan ringkasan.
+                stopPing() {
+                    const c = this.pingConsole;
+                    if (!c.running) return;
+
+                    this.pingRunId++;
+                    this.pingAbort?.abort();
+                    c.running = false;
+
+                    if (this.pingStatuses[c.id] === 'checking') {
+                        this.pingStatuses[c.id] = 'unknown';
+                    }
+                    if (c.stats.sent > 0) {
+                        this.addPingSummary();
+                    }
+                },
+
+                async runPingLoop(runId) {
+                    while (runId === this.pingRunId) {
+                        const startedAt = Date.now();
+                        const shouldContinue = await this.sendPing(runId);
+                        if (!shouldContinue || runId !== this.pingRunId) return;
+
+                        // Jeda 1 detik antar ping; host yang timeout sudah memakan waktu itu.
+                        const delay = Math.max(0, 1000 - (Date.now() - startedAt));
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                },
+
+                async sendPing(runId) {
+                    const c = this.pingConsole;
+                    this.pingAbort = new AbortController();
+
                     try {
-                        const response = await fetch('{{ url('inventory') }}/' + id + '/ping', {
+                        const response = await fetch('{{ url('inventory') }}/' + c.id + '/ping', {
                             method: 'GET',
+                            signal: this.pingAbort.signal,
                             headers: {
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
                             }
                         });
-                        
+
+                        if (runId !== this.pingRunId) return false;
+
                         if (response.status === 429) {
-                            alert('Terlalu banyak permintaan ping. Silakan tunggu beberapa saat.');
-                            this.pingStatuses[id] = 'unknown';
-                            return;
+                            this.addPingLine('Terlalu banyak permintaan ping. Silakan tunggu beberapa saat.', 'error');
+                            this.stopPing();
+                            return false;
                         }
 
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+
                         const result = await response.json();
-                        this.pingStatuses[id] = result.status; // 'online' or 'offline'
+                        if (runId !== this.pingRunId) return false;
+
+                        this.recordPingResult(result);
+                        return true;
                     } catch (error) {
+                        if (error.name === 'AbortError') return false;
+
+                        // Kegagalan ke server web bukan packet loss ke PC tujuan, jadi tidak dihitung.
                         console.error('Ping failed:', error);
-                        this.pingStatuses[id] = 'offline';
+                        this.addPingLine('Gagal menghubungi server aplikasi. Ping dihentikan.', 'error');
+                        this.stopPing();
+                        return false;
                     }
                 },
-                
+
+                recordPingResult(result) {
+                    const c = this.pingConsole;
+                    const isOnline = result.status === 'online';
+
+                    c.stats.sent++;
+                    if (isOnline) {
+                        c.stats.received++;
+                        if (result.time !== null) {
+                            c.stats.min = c.stats.min === null ? result.time : Math.min(c.stats.min, result.time);
+                            c.stats.max = c.stats.max === null ? result.time : Math.max(c.stats.max, result.time);
+                            c.stats.total += result.time;
+                        }
+                    } else {
+                        c.stats.lost++;
+                    }
+
+                    this.pingStatuses[c.id] = result.status; // 'online' or 'offline'
+                    this.addPingLine(result.reply, isOnline ? 'ok' : 'fail');
+                },
+
+                addPingSummary() {
+                    const c = this.pingConsole;
+                    const s = c.stats;
+
+                    this.addPingLine('');
+                    this.addPingLine(`Ping statistics for ${c.ip}:`);
+                    this.addPingLine(`    Packets: Sent = ${s.sent}, Received = ${s.received}, Lost = ${s.lost} (${this.pingLossPercent()}% loss),`);
+                    if (s.received > 0 && s.min !== null) {
+                        this.addPingLine('Approximate round trip times in milli-seconds:');
+                        this.addPingLine(`    Minimum = ${s.min}ms, Maximum = ${s.max}ms, Average = ${this.pingAverage()}ms`);
+                    }
+                },
+
+                pingLossPercent() {
+                    const s = this.pingConsole.stats;
+                    return s.sent ? Math.floor((s.lost / s.sent) * 100) : 0;
+                },
+
+                pingAverage() {
+                    const s = this.pingConsole.stats;
+                    return s.received ? Math.round(s.total / s.received) : 0;
+                },
+
+                addPingLine(text, type = 'info') {
+                    const c = this.pingConsole;
+                    const output = document.getElementById('ping-output');
+                    // Jangan menyeret scroll kalau user sedang membaca baris lama.
+                    const followTail = !output || output.scrollHeight - output.scrollTop - output.clientHeight < 40;
+
+                    c.lines.push({ id: ++this.pingLineId, text, type });
+                    if (c.lines.length > 1000) c.lines.shift();
+
+                    if (followTail) {
+                        this.$nextTick(() => {
+                            const el = document.getElementById('ping-output');
+                            if (el) el.scrollTop = el.scrollHeight;
+                        });
+                    }
+                },
+
+                focusIpSegment(position) {
+                    const box = document.getElementById('ipSegment' + position);
+                    if (box) {
+                        box.focus();
+                        box.select();
+                    }
+                },
+
+                handleIpSegmentKey(event, position) {
+                    // Titik berpindah ke kotak berikutnya, seperti mengetik IP biasa.
+                    if (event.key === '.') {
+                        event.preventDefault();
+                        this.focusIpSegment(position + 1);
+                    } else if (event.key === 'Backspace' && event.target.value === '') {
+                        event.preventDefault();
+                        this.focusIpSegment(position - 1);
+                    }
+                },
+
+                handleIpSegmentInput(event, position) {
+                    const box = event.target;
+                    box.value = box.value.replace(/\D/g, '');
+
+                    // Satu timer untuk keempat kotak, jadi mengetik satu IP hanya memicu satu pencarian.
+                    clearTimeout(this.ipSearchTimer);
+                    this.ipSearchTimer = setTimeout(() => this.performSearch(box.form), 500);
+
+                    if (box.value.length === 3) {
+                        this.focusIpSegment(position + 1);
+                    }
+                },
+
+                clearIpSegments() {
+                    const boxes = [1, 2, 3, 4].map(position => document.getElementById('ipSegment' + position));
+                    if (boxes.every(box => box.value === '')) return;
+
+                    clearTimeout(this.ipSearchTimer);
+                    boxes.forEach(box => { box.value = ''; });
+                    this.performSearch(document.getElementById('searchForm'));
+                    boxes[0].focus();
+                },
+
                 async performSearch(form) {
+                    // Mengisi beberapa kotak bisa memicu beberapa request; hanya yang terakhir dipakai.
+                    const searchId = ++this.searchRequestId;
                     this.isSearching = true;
                     const url = new URL(form.action);
                     const formData = new FormData(form);
@@ -547,6 +820,8 @@
                             }
                         });
                         const html = await response.text();
+                        if (searchId !== this.searchRequestId) return;
+
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
                         
@@ -562,7 +837,9 @@
                     } catch (error) {
                         console.error('Search failed:', error);
                     } finally {
-                        this.isSearching = false;
+                        if (searchId === this.searchRequestId) {
+                            this.isSearching = false;
+                        }
                     }
                 },
 

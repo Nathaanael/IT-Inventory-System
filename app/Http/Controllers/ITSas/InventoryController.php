@@ -42,6 +42,15 @@ class InventoryController extends Controller
             });
         }
 
+        $ipSegments = $this->ipSegmentsFromRequest($request);
+
+        if (array_filter($ipSegments, fn ($segment) => $segment !== '')) {
+            // Pola punya tepat 3 titik seperti IPv4, sehingga "%" tidak bisa melewati
+            // batas segmen: "%.99.%.%" cocok dengan 10.99.27.1, tetapi tidak 10.1.99.5.
+            $pattern = implode('.', array_map(fn ($segment) => $segment === '' ? '%' : $segment, $ipSegments));
+            $query->where('ip_address', 'like', $pattern);
+        }
+
         if ($unit !== 'Semua') {
             $query->whereHas('department', function($q) use ($unit) {
                 $q->where('unit', $unit);
@@ -65,7 +74,24 @@ class InventoryController extends Controller
             'PR' => $todayNewInventories->where('department.unit', 'PR')->count(),
         ];
 
-        return view('inventory.inventory', compact('inventories', 'perPage', 'unit', 'newCount'));
+        return view('inventory.inventory', compact('inventories', 'perPage', 'unit', 'newCount', 'ipSegments'));
+    }
+
+    /**
+     * Ambil isi 4 kotak segmen IP (ip1-ip4). Kotak kosong atau bukan angka menjadi ''.
+     * Nol di depan dibuang karena IP tersimpan tanpa itu, misalnya "099" menjadi "99".
+     */
+    private function ipSegmentsFromRequest(Request $request): array
+    {
+        $segments = [];
+
+        foreach (range(1, 4) as $position) {
+            $value = $request->query("ip{$position}");
+            $isValid = is_string($value) && preg_match('/^\d{1,3}$/', $value);
+            $segments[$position] = $isValid ? (string) (int) $value : '';
+        }
+
+        return $segments;
     }
 
     public function create()
@@ -269,10 +295,52 @@ class InventoryController extends Controller
             $isOnline = true;
         }
         
+        $reply = $this->parsePingReply($output);
+
         return response()->json([
             'status' => $isOnline ? 'online' : 'offline',
-            'ip' => $ip
+            'ip' => $ip,
+            'reply' => $reply['line'],
+            'time' => $isOnline ? $reply['time'] : null,
         ]);
+    }
+
+    /**
+     * Ambil baris balasan dari output ping, misalnya
+     * "Reply from 10.0.0.1: bytes=32 time=2ms TTL=128" atau "Request timed out.".
+     */
+    private function parsePingReply(array $output): array
+    {
+        $lines = array_values(array_filter(array_map('trim', $output), 'strlen'));
+
+        $line = null;
+        foreach ($lines as $candidate) {
+            if (stripos($candidate, 'ttl=') !== false) {
+                $line = $candidate;
+                break;
+            }
+        }
+
+        // Tanpa TTL, baris kedua berisi alasannya (setelah header "Pinging ...").
+        // Di Linux, timeout langsung diikuti baris statistik "--- ... ---".
+        if ($line === null) {
+            $line = $lines[1] ?? 'Request timed out.';
+            if (str_starts_with($line, '---')) {
+                $line = 'Request timed out.';
+            }
+        }
+
+        // "time<1ms" dihitung 0ms, sama seperti statistik CMD.
+        $time = null;
+        if (preg_match('/([=<])\s*([\d.,]+)\s*ms/i', $line, $matches)) {
+            $time = $matches[1] === '<' ? 0.0 : (float) str_replace(',', '.', $matches[2]);
+        }
+
+        return [
+            // Output Windows mengikuti codepage OEM, bukan selalu UTF-8.
+            'line' => mb_scrub($line, 'UTF-8'),
+            'time' => $time,
+        ];
     }
 
 

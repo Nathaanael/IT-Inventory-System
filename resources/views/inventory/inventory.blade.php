@@ -61,6 +61,33 @@
                 </div>
             </div>
 
+            <!-- Pencarian per Segmen IP -->
+            <div class="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Cari Segmen IP</span>
+                <div class="flex items-center gap-1.5">
+                    @foreach ($ipSegments as $position => $segment)
+                        <input
+                            type="text"
+                            form="searchForm"
+                            name="ip{{ $position }}"
+                            id="ipSegment{{ $position }}"
+                            value="{{ $segment }}"
+                            inputmode="numeric"
+                            maxlength="3"
+                            autocomplete="off"
+                            aria-label="Segmen IP ke-{{ $position }}"
+                            @keydown="handleIpSegmentKey($event, {{ $position }})"
+                            @input="handleIpSegmentInput($event, {{ $position }})"
+                            class="w-14 rounded-lg border border-gray-300 bg-transparent px-2 py-2 text-center text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500"
+                        />
+                        @if (!$loop->last)
+                            <span class="text-gray-400" aria-hidden="true">.</span>
+                        @endif
+                    @endforeach
+                </div>
+                <button type="button" @click="clearIpSegments()" class="text-sm font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400 transition-colors">Reset</button>
+            </div>
+
             <!-- Unit Filter Tabs (UI Only) -->
             <div class="mb-6 flex w-full border-b border-gray-200 dark:border-gray-800" 
                  x-data="{ 
@@ -561,6 +588,8 @@
                 deleteId: null,
                 deleteUrl: '',
                 isSearching: false,
+                searchRequestId: 0,
+                ipSearchTimer: null,
                 pingStatuses: {},
 
                 pingConsole: {
@@ -730,7 +759,51 @@
                     }
                 },
 
+                focusIpSegment(position) {
+                    const box = document.getElementById('ipSegment' + position);
+                    if (box) {
+                        box.focus();
+                        box.select();
+                    }
+                },
+
+                handleIpSegmentKey(event, position) {
+                    // Titik berpindah ke kotak berikutnya, seperti mengetik IP biasa.
+                    if (event.key === '.') {
+                        event.preventDefault();
+                        this.focusIpSegment(position + 1);
+                    } else if (event.key === 'Backspace' && event.target.value === '') {
+                        event.preventDefault();
+                        this.focusIpSegment(position - 1);
+                    }
+                },
+
+                handleIpSegmentInput(event, position) {
+                    const box = event.target;
+                    box.value = box.value.replace(/\D/g, '');
+
+                    // Satu timer untuk keempat kotak, jadi mengetik satu IP hanya memicu satu pencarian.
+                    clearTimeout(this.ipSearchTimer);
+                    this.ipSearchTimer = setTimeout(() => this.performSearch(box.form), 500);
+
+                    if (box.value.length === 3) {
+                        this.focusIpSegment(position + 1);
+                    }
+                },
+
+                clearIpSegments() {
+                    const boxes = [1, 2, 3, 4].map(position => document.getElementById('ipSegment' + position));
+                    if (boxes.every(box => box.value === '')) return;
+
+                    clearTimeout(this.ipSearchTimer);
+                    boxes.forEach(box => { box.value = ''; });
+                    this.performSearch(document.getElementById('searchForm'));
+                    boxes[0].focus();
+                },
+
                 async performSearch(form) {
+                    // Mengisi beberapa kotak bisa memicu beberapa request; hanya yang terakhir dipakai.
+                    const searchId = ++this.searchRequestId;
                     this.isSearching = true;
                     const url = new URL(form.action);
                     const formData = new FormData(form);
@@ -747,6 +820,8 @@
                             }
                         });
                         const html = await response.text();
+                        if (searchId !== this.searchRequestId) return;
+
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
                         
@@ -762,7 +837,9 @@
                     } catch (error) {
                         console.error('Search failed:', error);
                     } finally {
-                        this.isSearching = false;
+                        if (searchId === this.searchRequestId) {
+                            this.isSearching = false;
+                        }
                     }
                 },
 

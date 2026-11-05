@@ -42,6 +42,15 @@ class InventoryController extends Controller
             });
         }
 
+        $ipSegments = $this->ipSegmentsFromRequest($request);
+
+        if (array_filter($ipSegments, fn ($segment) => $segment !== '')) {
+            // Pola punya tepat 3 titik seperti IPv4, sehingga "%" tidak bisa melewati
+            // batas segmen: "%.99.%.%" cocok dengan 10.99.27.1, tetapi tidak 10.1.99.5.
+            $pattern = implode('.', array_map(fn ($segment) => $segment === '' ? '%' : $segment, $ipSegments));
+            $query->where('ip_address', 'like', $pattern);
+        }
+
         if ($unit !== 'Semua') {
             $query->whereHas('department', function($q) use ($unit) {
                 $q->where('unit', $unit);
@@ -65,7 +74,24 @@ class InventoryController extends Controller
             'PR' => $todayNewInventories->where('department.unit', 'PR')->count(),
         ];
 
-        return view('inventory.inventory', compact('inventories', 'perPage', 'unit', 'newCount'));
+        return view('inventory.inventory', compact('inventories', 'perPage', 'unit', 'newCount', 'ipSegments'));
+    }
+
+    /**
+     * Ambil isi 4 kotak segmen IP (ip1-ip4). Kotak kosong atau bukan angka menjadi ''.
+     * Nol di depan dibuang karena IP tersimpan tanpa itu, misalnya "099" menjadi "99".
+     */
+    private function ipSegmentsFromRequest(Request $request): array
+    {
+        $segments = [];
+
+        foreach (range(1, 4) as $position) {
+            $value = $request->query("ip{$position}");
+            $isValid = is_string($value) && preg_match('/^\d{1,3}$/', $value);
+            $segments[$position] = $isValid ? (string) (int) $value : '';
+        }
+
+        return $segments;
     }
 
     public function create()
